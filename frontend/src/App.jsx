@@ -489,7 +489,7 @@ export default function App() {
             </select>
           </label>
 
-          <button type="button" onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}>
+          <button style={styles.btn} onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}>
             {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
           </button>
           <table style={styles.table}>
