@@ -208,16 +208,39 @@ export default function App() {
   // Organizing list of models in order based on total oversize
   // sort results by Total Oversize (margin_total) smallest -> largest
   const sortedResults = useMemo(() => {
+    console.log("📊 Recomputing sortedResults", {
+      sortKey,
+      sortDir,
+      resultCount: results.length,
+    });
+
     return [...results]
       .map((r, idx) => ({
         ...r,
         _rowId: `${r.Model}-${r.Type}-${r.Units}-${idx}`,
-        "Total Oversize": Number(r.margin_total ?? 0), // 👈 key line
+        "Total Oversize": Number(r.margin_total ?? 0),
+        "Worst Margin": Number(r.worst_margin ?? 0),
+        "Indoor Capacity": toNumberOrNull(r["Indoor Capacity"]),
+        "Total Capacity": toNumberOrNull(r["Total Capacity"]),
+        "Units": toNumberOrNull(r.Units),
+        "Model": r.Model,
+        "Type": r.Type,
       }))
-      .sort((a, b) =>
-        compareValues(a[sortKey], b[sortKey], sortDir)
-      );
-  }, [results]);
+      
+      .sort((a, b) => {
+        const av = a[sortKey];
+        const bv = b[sortKey];
+
+        console.log("🧮 Compare", {
+          sortKey,
+          sortDir,
+          a: av,
+          b: bv,
+        });
+
+        return compareValues(av, bv, sortDir);
+      });
+  }, [results, sortKey, sortDir]);
 
   // layout styles (simple, clean)
   const styles = {
@@ -482,14 +505,29 @@ export default function App() {
           <div style={styles.sectionTitle}>Results</div>
           <label>
             Sort by{" "}
-            <select value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+            <select 
+              value={sortKey} 
+              onChange={(e) => {
+                console.log("🔽 Sort column changed:", e.target.value);
+                setSortKey(e.target.value);
+              }}>
               {sortColumns.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </label>
 
-          <button type = "button" style={styles.btn} onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}>
+          <button 
+            type = "button" 
+            style={styles.btn} 
+            onClick={() => {
+              setSortDir(d => {
+                const next = d === "asc" ? "desc" : "asc";
+                console.log("🔁 Sort direction toggled:", d, "→", next);
+                return next;
+              });
+            }}
+          >
             {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
           </button>
           <table style={styles.table}>
