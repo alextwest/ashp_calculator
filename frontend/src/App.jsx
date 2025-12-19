@@ -171,6 +171,11 @@ export default function App() {
     }
   }
 
+  // Sum all the reqs
+  const totalReq = useMemo(() => {
+    return reqs.reduce((sum, v) => sum + (toNumberOrNull(v) ?? 0), 0);
+  }, [reqs]);
+
   // Organizing list of models in order based on total oversize
   // sort results by Total Oversize (margin_total) smallest -> largest
   const sortedResults = useMemo(() => {
@@ -422,6 +427,18 @@ export default function App() {
               />
             </label>
           ))}
+        </div>
+        <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+          <div style={styles.field}>
+            <div style={styles.fieldLabel}>Total Req</div>
+            <input
+              style={{ ...styles.input, minWidth: 200, background: "#f7f7f7" }}
+              value={Number(totalReq).toFixed(0)}
+              readOnly
+              tabIndex={-1}
+            />
+            <div style={styles.helperSpacer} />
+          </div>
         </div>
       </div>
 
