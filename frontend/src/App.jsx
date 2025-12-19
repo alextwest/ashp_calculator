@@ -289,7 +289,7 @@ export default function App() {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.title}>ASHP Combo Finder</h1>
+      <h1 style={styles.title}>ASHP Combo Calculator</h1>
 
       {/* TOP BAR (mimics your Tkinter top frame) */}
       <div style={{ ...styles.section, marginBottom: 12 }}>
@@ -399,7 +399,7 @@ export default function App() {
                 <tr
                   key={`${r.Model}-${i}`}
                   style={{
-                    ...(selectedRow && r.Model === selectedRow.Model && r.Units === selectedRow.Units
+                    ...(selectedRow && r.Model === selectedRow.Model && r.Units === selectedRow.Units && r.Type === selectedRow.Type
                       ? styles.selectedRow
                       : null),
                   }}
