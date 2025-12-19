@@ -56,6 +56,8 @@ export default function App() {
   const [sortKey, setSortKey] = useState(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState("asc");
 
+  const sortColumns = ["Total Oversize", "Worst Margin", "Indoor Capacity", "Total Capacity", "Model", "Type", "Units"]; 
+
   // details autosize like your Tkinter Text box
   const detailsText = useMemo(() => {
     if (!selectedRow) return "";
