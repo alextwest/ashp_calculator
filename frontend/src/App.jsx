@@ -194,7 +194,8 @@ export default function App() {
     topBar: {
       display: "flex",
       gap: 10,
-      alignItems: "end",
+      //alignItems: "end",
+      alignItems: "flex-start",
       flexWrap: "wrap",
     },
 
@@ -203,6 +204,26 @@ export default function App() {
       flexDirection: "column",
       gap: 4,
       fontSize: 12,
+    },
+
+    field: {
+      display: "flex",
+      flexDirection: "column",
+    },
+
+    fieldLabel: {
+      marginBottom: 4,
+      fontWeight: 600, // optional, match your UI
+    },
+
+    helperText: {
+      fontSize: 12,
+      opacity: 0.75,
+      marginTop: 4,
+    },
+
+    helperSpacer: {
+      height: 16, // keep all fields same height as ones with helper text
     },
 
     input: {
@@ -294,8 +315,9 @@ export default function App() {
       {/* TOP BAR (mimics your Tkinter top frame) */}
       <div style={{ ...styles.section, marginBottom: 12 }}>
         <div style={styles.topBar}>
-          <label style={styles.label}>
-            Manufacturer
+
+          <div style={styles.field}>
+            <div style={styles.fieldLabel}>Manufacturer</div>
             <select
               style={styles.input}
               value={manufacturer}
@@ -303,19 +325,22 @@ export default function App() {
               disabled={loading}
             >
               {MANUFACTURERS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
+                <option key={m} value={m}>{m}</option>
               ))}
             </select>
-          </label>
+            <div style={styles.helperSpacer} />
+          </div>
 
-          <button style={styles.btn} onClick={() => loadData(manufacturer)} disabled={loading}>
-            Load / Refresh
-          </button>
+          <div style={styles.field}>
+            <div style={styles.fieldLabel}>&nbsp;</div>
+            <button style={styles.btn} onClick={() => loadData(manufacturer)} disabled={loading}>
+              Load / Refresh
+            </button>
+            <div style={styles.helperSpacer} />
+          </div>
 
-          <label style={styles.label}>
-            Type
+          <div style={styles.field}>
+            <div style={styles.fieldLabel}>Type</div>
             <select
               style={styles.input}
               value={typeFilter}
@@ -323,15 +348,14 @@ export default function App() {
               disabled={loading}
             >
               {types.map((t) => (
-                <option key={t} value={t}>
-                  {t === "" ? "(blank)" : t}
-                </option>
+                <option key={t} value={t}>{t === "" ? "(blank)" : t}</option>
               ))}
             </select>
-          </label>
+            <div style={styles.helperSpacer} />
+          </div>
 
-          <label style={styles.label}>
-            Heads / Rooms
+          <div style={styles.field}>
+            <div style={styles.fieldLabel}>Heads / Rooms</div>
             <input
               style={styles.smallInput}
               type="number"
@@ -341,12 +365,17 @@ export default function App() {
               onChange={(e) => setRoomCount(clamp(Number(e.target.value || 1), 1, maxHeads))}
               disabled={loading}
             />
-            <span style={styles.note}>Max: {maxHeads}</span>
-          </label>
+            <div style={styles.helperText}>Max: {maxHeads}</div>
+          </div>
 
-          <button style={styles.btn} onClick={runSolver} disabled={loading}>
-            {loading ? "Working..." : "Find Options"}
-          </button>
+          <div style={styles.field}>
+            <div style={styles.fieldLabel}>&nbsp;</div>
+            <button style={styles.btn} onClick={runSolver} disabled={loading}>
+              {loading ? "Working..." : "Find Options"}
+            </button>
+            <div style={styles.helperSpacer} />
+          </div>
+
         </div>
 
         {error && <div style={styles.err}>{error}</div>}
