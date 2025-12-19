@@ -506,7 +506,8 @@ export default function App() {
           <label>
             Sort by{" "}
             <select 
-              value={sortKey} 
+              value={sortKey}
+              style={styles.input}
               onChange={(e) => {
                 console.log("🔽 Sort column changed:", e.target.value);
                 setSortKey(e.target.value);
