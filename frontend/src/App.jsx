@@ -33,6 +33,7 @@ function compareValues(a, b, dir) {
 }
 
 export default function App() {
+  console.log("🚀 App rendered");
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("Fujitsu");
   const [typeFilter, setTypeFilter] = useState("All");
