@@ -435,7 +435,24 @@ export default function App() {
 
       {/* ROOM INPUTS (mimics rooms_frame) */}
       <div style={{ ...styles.section, marginBottom: 12 }}>
-        <div style={styles.sectionTitle}>Room/Head BTU Requirements</div>
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 6
+        }}>
+          <div style={styles.sectionTitle}>
+            Room/Head BTU Requirements
+          </div>
+
+          <div style={{
+            fontWeight: 600,
+            fontSize: 12,
+            opacity: 0.85
+          }}>
+            Total Req: {Number(totalReq).toFixed(0)} BTU
+          </div>
+        </div>
         <div style={styles.roomsGrid}>
           {reqs.map((val, idx) => (
             <label key={idx} style={styles.label}>
@@ -456,18 +473,6 @@ export default function App() {
               />
             </label>
           ))}
-        </div>
-        <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
-          <div style={styles.field}>
-            <div style={styles.fieldLabel}>Total Req</div>
-            <input
-              style={{ ...styles.input, minWidth: 200, background: "#f7f7f7" }}
-              value={Number(totalReq).toFixed(0)}
-              readOnly
-              tabIndex={-1}
-            />
-            <div style={styles.helperSpacer} />
-          </div>
         </div>
       </div>
 
