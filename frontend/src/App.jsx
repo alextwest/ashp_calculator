@@ -158,14 +158,32 @@ export default function App() {
       if (list.length === 0) {
         setError("No rows found that can cover these requirements with the same head count.");
       } else {
-        setSelectedRow(list.length ? list[0] : null);
+        const first = [...list].sort(
+          (a, b) => Number(a.margin_total ?? 0) - Number(b.margin_total ?? 0)
+        )[0];
+        setSelectedRow(first ?? null);
       }
+
     } catch (e) {
       setError(String(e?.message || e));
     } finally {
       setLoading(false);
     }
   }
+
+  // Organizing list of models in order based on total oversize
+  // sort results by Total Oversize (margin_total) smallest -> largest
+  const sortedResults = useMemo(() => {
+    return [...results]
+      .map((r, idx) => ({
+        ...r,
+        _rowId: `${r.Model}-${r.Type}-${r.Units}-${idx}`, // stable identity
+        _oversizeNum: Number(r.margin_total ?? 0),
+      }))
+      .sort((a, b) => a._oversizeNum - b._oversizeNum);
+  }, [results]);
+
+
 
   // layout styles (simple, clean)
   const styles = {
@@ -424,14 +442,10 @@ export default function App() {
               </tr>
             </thead>
             <tbody>
-              {results.map((r, i) => (
+              {sortedResults.map((r, i) => (
                 <tr
-                  key={`${r.Model}-${i}`}
-                  style={{
-                    ...(selectedRow && r.Model === selectedRow.Model && r.Units === selectedRow.Units && r.Type === selectedRow.Type
-                      ? styles.selectedRow
-                      : null),
-                  }}
+                  key={r._rowId}
+                  style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
                   onClick={() => setSelectedRow(r)}
                 >
                   <td style={styles.td}>{r.Model}</td>
