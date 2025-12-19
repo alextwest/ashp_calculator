@@ -1,0 +1,74 @@
+name: Build and deploy (React + FastAPI) to Azure Web App
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- FRONTEND BUILD ----------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Copy frontend build into backend/frontend_dist
+        run: |
+          rm -rf backend/frontend_dist
+          mkdir -p backend/frontend_dist
+          cp -R frontend/dist/* backend/frontend_dist/
+
+      # ---------- BACKEND SANITY CHECK ----------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend deps
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Optional smoke import check (fails fast if imports are broken)
+      - name: Backend import smoke test
+        working-directory: backend
+        run: |
+          python -c "import main; print('Imported main.py successfully')"
+
+      # ---------- PACKAGE FOR DEPLOY ----------
+      - name: Create deploy package (backend)
+        run: |
+          cd backend
+          zip -r ../deploy.zip . -x "**/__pycache__/**" -x "**/*.pyc" -x "**/.venv/**" -x "**/venv/**"
+
+      # ---------- DEPLOY ----------
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deploy.zip
