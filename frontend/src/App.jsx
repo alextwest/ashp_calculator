@@ -11,6 +11,27 @@ function toNumberOrNull(v) {
   return Number.isFinite(x) ? x : null;
 }
 
+function compareValues(a, b, dir) {
+  const av = a ?? "";
+  const bv = b ?? "";
+
+  const an = toNumberOrNull(av);
+  const bn = toNumberOrNull(bv);
+
+  // numeric compare if possible
+  if (an !== null && bn !== null) {
+    return dir === "asc" ? an - bn : bn - an;
+  }
+
+  // fallback string compare
+  const as = String(av).toLowerCase();
+  const bs = String(bv).toLowerCase();
+
+  if (as < bs) return dir === "asc" ? -1 : 1;
+  if (as > bs) return dir === "asc" ? 1 : -1;
+  return 0;
+}
+
 export default function App() {
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("Fujitsu");
@@ -28,6 +49,12 @@ export default function App() {
   const [results, setResults] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [error, setError] = useState("");
+
+  // --- sorting ---
+  const DEFAULT_SORT_KEY = "Total Oversize";
+
+  const [sortKey, setSortKey] = useState(DEFAULT_SORT_KEY);
+  const [sortDir, setSortDir] = useState("asc");
 
   // details autosize like your Tkinter Text box
   const detailsText = useMemo(() => {
@@ -182,13 +209,13 @@ export default function App() {
     return [...results]
       .map((r, idx) => ({
         ...r,
-        _rowId: `${r.Model}-${r.Type}-${r.Units}-${idx}`, // stable identity
-        _oversizeNum: Number(r.margin_total ?? 0),
+        _rowId: `${r.Model}-${r.Type}-${r.Units}-${idx}`,
+        "Total Oversize": Number(r.margin_total ?? 0), // 👈 key line
       }))
-      .sort((a, b) => a._oversizeNum - b._oversizeNum);
+      .sort((a, b) =>
+        compareValues(a[sortKey], b[sortKey], sortDir)
+      );
   }, [results]);
-
-
 
   // layout styles (simple, clean)
   const styles = {
@@ -446,6 +473,18 @@ export default function App() {
       <div style={styles.split}>
         <div style={{ ...styles.section, flex: 2, overflow: "auto", maxHeight: 420 }}>
           <div style={styles.sectionTitle}>Results</div>
+          <label>
+            Sort by{" "}
+            <select value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+              {sortColumns.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+
+          <button type="button" onClick={() => setSortDir(d => d === "asc" ? "desc" : "asc")}>
+            {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
+          </button>
           <table style={styles.table}>
             <thead>
               <tr>
