@@ -277,7 +277,7 @@ export default function App() {
         }
 
         // (optional) noisy debug; remove once verified
-        console.log("🧮 Compare", { sortKey, sortDir, a: av, b: bv });
+        //console.log("🧮 Compare", { sortKey, sortDir, a: av, b: bv });
 
         return compareValues(av, bv, sortDir);
       });
