@@ -32,6 +32,36 @@ function compareValues(a, b, dir) {
   return 0;
 }
 
+// Functions to help sort unit combos (7+7+7 < 7+7+9 < 7+7+12 < 7+9+9 < 7+9+12 … < 9+12+12 …)
+function parseUnitsCombo(s) {
+  // "7+7+12" -> [7,7,12]
+  // Handles spaces, empty, null.
+  return String(s ?? "")
+    .split("+")
+    .map((p) => Number(String(p).trim()))
+    .filter((n) => Number.isFinite(n));
+}
+
+function compareUnitsCombo(aUnits, bUnits, dir) {
+  const a = parseUnitsCombo(aUnits);
+  const b = parseUnitsCombo(bUnits);
+
+  // Compare element-by-element (lexicographic)
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    const av = a[i];
+    const bv = b[i];
+
+    // shorter sequence comes first if all previous equal
+    if (av === undefined && bv === undefined) return 0;
+    if (av === undefined) return dir === "asc" ? -1 : 1;
+    if (bv === undefined) return dir === "asc" ? 1 : -1;
+
+    if (av !== bv) return dir === "asc" ? av - bv : bv - av;
+  }
+  return 0;
+}
+
 export default function App() {
   console.log("🚀 App rendered");
   // --- top bar state ---
@@ -229,15 +259,15 @@ export default function App() {
       }))
       
       .sort((a, b) => {
-        const av = a[sortKey];
-        const bv = b[sortKey];
+        const av = a?.[sortKey];
+        const bv = b?.[sortKey];
 
-        console.log("🧮 Compare", {
-          sortKey,
-          sortDir,
-          a: av,
-          b: bv,
-        });
+        if (sortKey === "Units") {
+          return compareUnitsCombo(av, bv, sortDir);
+        }
+
+        // (optional) noisy debug; remove once verified
+        console.log("🧮 Compare", { sortKey, sortDir, a: av, b: bv });
 
         return compareValues(av, bv, sortDir);
       });
