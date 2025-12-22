@@ -660,13 +660,6 @@ export default function App() {
             placeholder="Select a result row to see details."
           />
         </div>
-        // <div style={{ fontSize: 12, marginTop: 6 }}>
-        //   detailsText length: {detailsText.length}
-        //   Selected: {selectedRow ? "YES" : "NO"}
-        // </div>
-        // <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, borderTop: "1px solid #eee", marginTop: 8, paddingTop: 8 }}>
-        //   {detailsText}
-        // </pre>
       </div>
     </div>
   );
