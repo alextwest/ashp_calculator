@@ -421,6 +421,23 @@ export default function App() {
     err: { color: "#b00020", marginTop: 8, whiteSpace: "pre-wrap" },
 
     note: { opacity: 0.75, fontSize: 12 },
+
+    resultsStickyHeader: {
+      position: "sticky",
+      top: 0,
+      zIndex: 20,
+      background: "#fff",          // important so the table doesn't show through
+      paddingBottom: 8,
+      borderBottom: "1px solid #ddd",
+    },
+
+    resultsControls: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap",
+    },
+
   };
 
 
@@ -543,35 +560,44 @@ export default function App() {
       {/* RESULTS + DETAILS (mimics treeview + details textbox) */}
       <div style={styles.split}>
         <div style={{ ...styles.section, flex: 2, overflow: "auto", maxHeight: 420 }}>
-          <div style={styles.sectionTitle}>Results</div>
-          <label>
-            Sort by{" "}
-            <select 
-              value={sortKey}
-              style={styles.input}
-              onChange={(e) => {
-                console.log("🔽 Sort column changed:", e.target.value);
-                setSortKey(e.target.value);
-              }}>
-              {sortColumns.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
+          {/* Sticky header */}
+          <div style={styles.resultsStickyHeader}>
+            <div style={styles.sectionTitle}>Results</div>
 
-          <button 
-            type = "button" 
-            style={styles.btn} 
-            onClick={() => {
-              setSortDir(d => {
-                const next = d === "asc" ? "desc" : "asc";
-                console.log("🔁 Sort direction toggled:", d, "→", next);
-                return next;
-              });
-            }}
-          >
-            {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
-          </button>
+            <div style={styles.resultsControls}>
+              <label>
+                Sort by{" "}
+                <select
+                  value={sortKey}
+                  style={styles.input}
+                  onChange={(e) => {
+                    console.log("🔽 Sort column changed:", e.target.value);
+                    setSortKey(e.target.value);
+                  }}
+                >
+                  {sortColumns.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                type="button"
+                style={styles.btn}
+                onClick={() => {
+                  setSortDir((d) => {
+                    const next = d === "asc" ? "desc" : "asc";
+                    console.log("🔁 Sort direction toggled:", d, "→", next);
+                    return next;
+                  });
+                }}
+              >
+                {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
+              </button>
+            </div>
+          </div>
+
+          {/* Table content */}
           <table style={styles.table}>
             <thead>
               <tr>
