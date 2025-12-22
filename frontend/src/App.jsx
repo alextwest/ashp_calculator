@@ -234,7 +234,7 @@ export default function App() {
         const first = [...list].sort(
           (a, b) => Number(a.margin_total ?? 0) - Number(b.margin_total ?? 0)
         )[0];
-        setSelectedRow(first ?? null);
+        setSelectedRow(null);
       }
 
     } catch (e) {
