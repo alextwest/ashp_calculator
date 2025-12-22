@@ -150,8 +150,8 @@ export default function App() {
   }, [roomCount]);
 
   useEffect(() => {
-  console.log("🧾 detailsText updated:", detailsText);
-}, [detailsText]);
+    console.log("🧾 detailsText updated:", detailsText);
+  }, [detailsText]);
 
   // --- load/refresh meta like your load_data() ---
   async function loadData(m = manufacturer) {
@@ -525,7 +525,13 @@ export default function App() {
       </div>
 
       {/* ROOM INPUTS (mimics rooms_frame) */}
-      <div style={{ ...styles.section, marginBottom: 12 }}>
+      <form
+        style={{ ...styles.section, marginBottom: 12 }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!loading) runSolver();
+        }}
+      >
         <div style={{
           display: "flex",
           justifyContent: "space-between",
@@ -565,7 +571,7 @@ export default function App() {
             </label>
           ))}
         </div>
-      </div>
+      </form>
 
       {/* RESULTS + DETAILS (mimics treeview + details textbox) */}
       <div style={styles.split}>
