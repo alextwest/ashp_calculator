@@ -34,36 +34,39 @@ function compareValues(a, b, dir) {
 
 // Functions to help sort unit combos (7+7+7 < 7+7+9 < 7+7+12 < 7+9+9 < 7+9+12 … < 9+12+12 …)
 function parseUnitsCombo(s) {
-  // "7+7+12" -> [7,7,12]
-  // Handles spaces, empty, null.
-  return String(s ?? "")
+  const parts = String(s ?? "")
     .split("+")
     .map((p) => Number(String(p).trim()))
     .filter((n) => Number.isFinite(n));
+
+  // normalize inside-combo order so "12+7" behaves like "7+12"
+  parts.sort((a, b) => a - b);
+
+  return parts;
 }
 
 function compareUnitsCombo(aUnits, bUnits, dir) {
   const a = parseUnitsCombo(aUnits);
   const b = parseUnitsCombo(bUnits);
 
-  // Compare element-by-element (lexicographic)
-  const len = Math.max(a.length, b.length);
-  for (let i = 0; i < len; i++) {
-    const av = a[i];
-    const bv = b[i];
+  // empty values go last in ascending, first in descending
+  if (a.length === 0 && b.length === 0) return 0;
+  if (a.length === 0) return dir === "asc" ? 1 : -1;
+  if (b.length === 0) return dir === "asc" ? -1 : 1;
 
-    // shorter sequence comes first if all previous equal
-    if (av === undefined && bv === undefined) return 0;
-    if (av === undefined) return dir === "asc" ? -1 : 1;
-    if (bv === undefined) return dir === "asc" ? 1 : -1;
+  // shorter combo first (2-head before 3-head) if you want that behavior
+  if (a.length !== b.length) {
+    return dir === "asc" ? a.length - b.length : b.length - a.length;
+  }
 
-    if (av !== bv) return dir === "asc" ? av - bv : bv - av;
+  // lexicographic compare
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return dir === "asc" ? a[i] - b[i] : b[i] - a[i];
   }
   return 0;
 }
 
 export default function App() {
-  console.log("🚀 App rendered");
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("Fujitsu");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -91,6 +94,8 @@ export default function App() {
 
   // details autosize like your Tkinter Text box
   const detailsText = useMemo(() => {
+    console.log("📝 computing detailsText, selectedRow =", selectedRow);
+
     if (!selectedRow) return "";
 
     const r = selectedRow;
@@ -183,6 +188,10 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manufacturer]);
 
+  useEffect(() => {
+    console.log("📌 selectedRow updated:", selectedRow);
+  }, [selectedRow]);
+
   async function runSolver() {
     setError("");
     setLoading(true);
@@ -263,6 +272,7 @@ export default function App() {
         const bv = b?.[sortKey];
 
         if (sortKey === "Units") {
+          console.log("UNITS compare", { av, bv });
           return compareUnitsCombo(av, bv, sortDir);
         }
 
@@ -579,7 +589,10 @@ export default function App() {
                 <tr
                   key={r._rowId}
                   style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
-                  onClick={() => setSelectedRow(r)}
+                  onClick={() => {
+                    console.log("🟦 Row clicked:", r);
+                    setSelectedRow(r);
+                  }}
                 >
                   <td style={styles.td}>{r.Model}</td>
                   <td style={styles.td}>{r.Type}</td>
