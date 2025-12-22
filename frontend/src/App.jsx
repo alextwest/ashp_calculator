@@ -398,8 +398,9 @@ export default function App() {
       padding: "6px 8px",
       borderBottom: "1px solid #ddd",
       position: "sticky",
-      top: 0,
+      top: 62,
       background: "white",
+      zIndex: 10,
     },
 
     td: { padding: "6px 8px", borderBottom: "1px solid #eee" },
