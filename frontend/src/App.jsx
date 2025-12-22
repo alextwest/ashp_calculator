@@ -276,7 +276,7 @@ export default function App() {
         const bv = b?.[sortKey];
 
         if (sortKey === "Units") {
-          console.log("UNITS compare", { av, bv });
+          //console.log("UNITS compare", { av, bv });
           return compareUnitsCombo(av, bv, sortDir);
         }
 
@@ -421,6 +421,9 @@ export default function App() {
       borderRadius: 4,
       border: "1px solid #ccc",
       background: "white",
+      color: "#111",
+      WebkitTextFillColor: "#111",
+      opacity: 1,
     },
 
     err: { color: "#b00020", marginTop: 8, whiteSpace: "pre-wrap" },
@@ -659,6 +662,9 @@ export default function App() {
           detailsText length: {detailsText.length}
           Selected: {selectedRow ? "YES" : "NO"}
         </div>
+        <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, borderTop: "1px solid #eee", marginTop: 8, paddingTop: 8 }}>
+          {detailsText}
+        </pre>
       </div>
     </div>
   );
