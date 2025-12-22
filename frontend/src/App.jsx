@@ -293,9 +293,9 @@ export default function App() {
       maxWidth: 1800,
       margin: "0 auto",
       padding: "12px",
-      //fontFamily: "Segoe UI, Arial, sans-serif",
-      //background: "white",
-      //color: "black",
+      fontFamily: "Segoe UI, Arial, sans-serif",
+      background: "white",
+      color: "black",
     },
 
     // simple boxed sections (like a desktop tool)
@@ -422,10 +422,10 @@ export default function App() {
       border: "1px solid #ccc",
       background: "white",
       // ✅ force visible text
-      //color: "#111",
-      //WebkitTextFillColor: "#111",
+      color: "#111",
+      WebkitTextFillColor: "#111",
       // ✅ in case something global is dimming it
-      //opacity: 1,
+      opacity: 1,
     },
 
     err: { color: "#b00020", marginTop: 8, whiteSpace: "pre-wrap" },
