@@ -223,7 +223,7 @@ export default function App() {
         "Worst Margin": Number(r.worst_margin ?? 0),
         "Indoor Capacity": toNumberOrNull(r["Indoor Capacity"]),
         "Total Capacity": toNumberOrNull(r["Total Capacity"]),
-        "Units": toNumberOrNull(r.Units),
+        "Units": r.Units,
         "Model": r.Model,
         "Type": r.Type,
       }))
