@@ -149,6 +149,10 @@ export default function App() {
     setSelectedRow(null);
   }, [roomCount]);
 
+  useEffect(() => {
+  console.log("🧾 detailsText updated:", detailsText);
+}, [detailsText]);
+
   // --- load/refresh meta like your load_data() ---
   async function loadData(m = manufacturer) {
     setError("");
@@ -652,6 +656,7 @@ export default function App() {
           />
         </div>
         <div style={{ fontSize: 12, marginTop: 6 }}>
+          detailsText length: {detailsText.length}
           Selected: {selectedRow ? "YES" : "NO"}
         </div>
       </div>
