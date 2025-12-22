@@ -571,6 +571,9 @@ export default function App() {
             </label>
           ))}
         </div>
+        <div style={{ fontSize: 11, color: "#666" }}>
+          Press Enter to find options
+        </div>
       </form>
 
       {/* RESULTS + DETAILS (mimics treeview + details textbox) */}
