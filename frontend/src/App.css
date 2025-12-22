@@ -40,3 +40,49 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Base page typography */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #111;
+  background: #fff;
+}
+
+/* Buttons */
+button {
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 13px;
+  color: #111;
+  -webkit-text-fill-color: #111;
+  opacity: 1;
+}
+
+/* Prevent invisible textarea text */
+textarea {
+  background: white;
+  caret-color: #111;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 6px 8px;
+}
+
+/* Selected row highlight */
+.tr-selected {
+  background: #f0f4ff;
+}

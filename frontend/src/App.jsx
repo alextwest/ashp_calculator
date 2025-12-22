@@ -293,9 +293,9 @@ export default function App() {
       maxWidth: 1800,
       margin: "0 auto",
       padding: "12px",
-      fontFamily: "Segoe UI, Arial, sans-serif",
-      background: "white",
-      color: "black",
+      //fontFamily: "Segoe UI, Arial, sans-serif",
+      //background: "white",
+      //color: "black",
     },
 
     // simple boxed sections (like a desktop tool)
@@ -421,9 +421,11 @@ export default function App() {
       borderRadius: 4,
       border: "1px solid #ccc",
       background: "white",
-      color: "#111",
-      WebkitTextFillColor: "#111",
-      opacity: 1,
+      // ✅ force visible text
+      //color: "#111",
+      //WebkitTextFillColor: "#111",
+      // ✅ in case something global is dimming it
+      //opacity: 1,
     },
 
     err: { color: "#b00020", marginTop: 8, whiteSpace: "pre-wrap" },
@@ -658,13 +660,13 @@ export default function App() {
             placeholder="Select a result row to see details."
           />
         </div>
-        <div style={{ fontSize: 12, marginTop: 6 }}>
-          detailsText length: {detailsText.length}
-          Selected: {selectedRow ? "YES" : "NO"}
-        </div>
-        <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, borderTop: "1px solid #eee", marginTop: 8, paddingTop: 8 }}>
-          {detailsText}
-        </pre>
+        // <div style={{ fontSize: 12, marginTop: 6 }}>
+        //   detailsText length: {detailsText.length}
+        //   Selected: {selectedRow ? "YES" : "NO"}
+        // </div>
+        // <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, borderTop: "1px solid #eee", marginTop: 8, paddingTop: 8 }}>
+        //   {detailsText}
+        // </pre>
       </div>
     </div>
   );
