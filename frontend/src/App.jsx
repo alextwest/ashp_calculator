@@ -375,7 +375,7 @@ export default function App() {
     // room requirement inputs
     roomsGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(4, minmax(200px, 1fr))",
+      gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
       gap: 8,
     },
 
@@ -455,219 +455,229 @@ export default function App() {
     <div style={styles.page}>
       <h1 style={styles.title}>ASHP Combo Calculator</h1>
 
-      {/* TOP BAR (mimics your Tkinter top frame) */}
-      <div style={{ ...styles.section, marginBottom: 12 }}>
-        <div style={styles.topBar}>
+      <div className="appShell">
 
-          <div style={styles.field}>
-            <div style={styles.fieldLabel}>Manufacturer</div>
-            <select
-              style={styles.input}
-              value={manufacturer}
-              onChange={(e) => setManufacturer(e.target.value)}
-              disabled={loading}
-            >
-              {MANUFACTURERS.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-            <div style={styles.helperSpacer} />
-          </div>
+        {/* TOP BAR (mimics your Tkinter top frame) */}
+        <section className="controls">
+          <div style={{ ...styles.section, marginBottom: 12 }}>
+            <div style={styles.topBar}>
 
-          <div style={styles.field}>
-            <div style={styles.fieldLabel}>&nbsp;</div>
-            <button style={styles.btn} onClick={() => loadData(manufacturer)} disabled={loading}>
-              Load / Refresh
-            </button>
-            <div style={styles.helperSpacer} />
-          </div>
-
-          <div style={styles.field}>
-            <div style={styles.fieldLabel}>Type</div>
-            <select
-              style={styles.input}
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              disabled={loading}
-            >
-              {types.map((t) => (
-                <option key={t} value={t}>{t === "" ? "(blank)" : t}</option>
-              ))}
-            </select>
-            <div style={styles.helperSpacer} />
-          </div>
-
-          <div style={styles.field}>
-            <div style={styles.fieldLabel}>Heads / Rooms</div>
-            <input
-              style={styles.smallInput}
-              type="number"
-              min={1}
-              max={maxHeads}
-              value={roomCount}
-              onChange={(e) => setRoomCount(clamp(Number(e.target.value || 1), 1, maxHeads))}
-              disabled={loading}
-            />
-            <div style={styles.helperText}>Max: {maxHeads}</div>
-          </div>
-
-          <div style={styles.field}>
-            <div style={styles.fieldLabel}>&nbsp;</div>
-            <button style={styles.btn} onClick={runSolver} disabled={loading}>
-              {loading ? "Working..." : "Find Options"}
-            </button>
-            <div style={styles.helperSpacer} />
-          </div>
-
-        </div>
-
-        {error && <div style={styles.err}>{error}</div>}
-      </div>
-
-      {/* ROOM INPUTS (mimics rooms_frame) */}
-      <form
-        style={{ ...styles.section, marginBottom: 12 }}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!loading) runSolver();
-        }}
-      >
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          marginBottom: 6
-        }}>
-          <div style={styles.sectionTitle}>
-            Room/Head BTU Requirements
-          </div>
-
-          <div style={{
-            fontWeight: 600,
-            fontSize: 12,
-            opacity: 0.85
-          }}>
-            Total Req: {Number(totalReq).toFixed(0)} BTU
-          </div>
-        </div>
-        <div style={styles.roomsGrid}>
-          {reqs.map((val, idx) => (
-            <label key={idx} style={styles.label}>
-              Req {idx + 1}
-              <input
-                style={styles.input}
-                value={val}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setReqs((prev) => {
-                    const next = [...prev];
-                    next[idx] = v;
-                    return next;
-                  });
-                }}
-                placeholder="e.g. 9000"
-                inputMode="numeric"
-              />
-            </label>
-          ))}
-        </div>
-        <div style={{ fontSize: 11, color: "#666" }}>
-          Press Enter to find options
-        </div>
-      </form>
-
-      {/* RESULTS + DETAILS (mimics treeview + details textbox) */}
-      <div style={styles.split}>
-        <div style={{ ...styles.section, flex: 2, overflow: "auto", maxHeight: 420 }}>
-          {/* Sticky header */}
-          <div style={styles.resultsStickyHeader}>
-            <div style={styles.sectionTitle}>Results</div>
-
-            <div style={styles.resultsControls}>
-              <label>
-                Sort by{" "}
+              <div style={styles.field}>
+                <div style={styles.fieldLabel}>Manufacturer</div>
                 <select
-                  value={sortKey}
                   style={styles.input}
-                  onChange={(e) => {
-                    console.log("🔽 Sort column changed:", e.target.value);
-                    setSortKey(e.target.value);
-                  }}
+                  value={manufacturer}
+                  onChange={(e) => setManufacturer(e.target.value)}
+                  disabled={loading}
                 >
-                  {sortColumns.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                  {MANUFACTURERS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
-              </label>
+                <div style={styles.helperSpacer} />
+              </div>
 
-              <button
-                type="button"
-                style={styles.btn}
-                onClick={() => {
-                  setSortDir((d) => {
-                    const next = d === "asc" ? "desc" : "asc";
-                    console.log("🔁 Sort direction toggled:", d, "→", next);
-                    return next;
-                  });
-                }}
-              >
-                {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
-              </button>
+              <div style={styles.field}>
+                <div style={styles.fieldLabel}>&nbsp;</div>
+                <button style={styles.btn} onClick={() => loadData(manufacturer)} disabled={loading}>
+                  Load / Refresh
+                </button>
+                <div style={styles.helperSpacer} />
+              </div>
+
+              <div style={styles.field}>
+                <div style={styles.fieldLabel}>Type</div>
+                <select
+                  style={styles.input}
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  disabled={loading}
+                >
+                  {types.map((t) => (
+                    <option key={t} value={t}>{t === "" ? "(blank)" : t}</option>
+                  ))}
+                </select>
+                <div style={styles.helperSpacer} />
+              </div>
+
+              <div style={styles.field}>
+                <div style={styles.fieldLabel}>Heads / Rooms</div>
+                <input
+                  style={styles.smallInput}
+                  type="number"
+                  min={1}
+                  max={maxHeads}
+                  value={roomCount}
+                  onChange={(e) => setRoomCount(clamp(Number(e.target.value || 1), 1, maxHeads))}
+                  disabled={loading}
+                />
+                <div style={styles.helperText}>Max: {maxHeads}</div>
+              </div>
+
+              <div style={styles.field}>
+                <div style={styles.fieldLabel}>&nbsp;</div>
+                <button style={styles.btn} onClick={runSolver} disabled={loading}>
+                  {loading ? "Working..." : "Find Options"}
+                </button>
+                <div style={styles.helperSpacer} />
+              </div>
+
             </div>
+
+            {error && <div style={styles.err}>{error}</div>}
           </div>
 
-          {/* Table content */}
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Model</th>
-                <th style={styles.th}>Type</th>
-                <th style={styles.th}>Indoor Capacity</th>
-                <th style={styles.th}>Total Capacity</th>
-                <th style={styles.th}>Units</th>
-                <th style={styles.th}>Worst Margin</th>
-                <th style={styles.th}>Total Oversize</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedResults.map((r, i) => (
-                <tr
-                  key={r._rowId}
-                  style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
-                  onClick={() => {
-                    console.log("🟦 Row clicked:", r);
-                    setSelectedRow(r);
-                  }}
-                >
-                  <td style={styles.td}>{r.Model}</td>
-                  <td style={styles.td}>{r.Type}</td>
-                  <td style={styles.td}>{r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}</td>
-                  <td style={styles.td}>{r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}</td>
-                  <td style={styles.td}>{r.Units}</td>
-                  <td style={styles.td}>{Number(r.worst_margin).toFixed(0)}</td>
-                  <td style={styles.td}>{Number(r.margin_total).toFixed(0)}</td>
-                </tr>
-              ))}
-              {results.length === 0 && (
-                <tr>
-                  <td style={styles.td} colSpan={7}>
-                    No results yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
 
-        <div style={{ ...styles.section, flex: 1 }}>
-          <div style={styles.sectionTitle}>Details</div>
-          <textarea
-            style={styles.details}
-            rows={detailsRows}
-            value={detailsText}
-            readOnly
-            placeholder="Select a result row to see details."
-          />
+          {/* ROOM INPUTS (mimics rooms_frame) */}
+          <form
+            style={{ ...styles.section, marginBottom: 12 }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!loading) runSolver();
+            }}
+          >
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: 6
+            }}>
+              <div style={styles.sectionTitle}>
+                Room/Head BTU Requirements
+              </div>
+
+              <div style={{
+                fontWeight: 600,
+                fontSize: 12,
+                opacity: 0.85
+              }}>
+                Total Req: {Number(totalReq).toFixed(0)} BTU
+              </div>
+            </div>
+            <div style={styles.roomsGrid}>
+              {reqs.map((val, idx) => (
+                <label key={idx} style={styles.label}>
+                  Req {idx + 1}
+                  <input
+                    style={styles.input}
+                    value={val}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setReqs((prev) => {
+                        const next = [...prev];
+                        next[idx] = v;
+                        return next;
+                      });
+                    }}
+                    placeholder="e.g. 9000"
+                    inputMode="numeric"
+                  />
+                </label>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: "#666" }}>
+              Press Enter to find options
+            </div>
+          </form>
+        </section>
+
+        {/* RESULTS + DETAILS (mimics treeview + details textbox) */}
+        <div className="rightSide">
+          <section className="results">
+            <div style={{ ...styles.section, flex: 2, overflow: "auto", maxHeight: "60vh" }}>
+              {/* Sticky header */}
+              <div style={styles.resultsStickyHeader}>
+                <div style={styles.sectionTitle}>Results</div>
+
+                <div style={styles.resultsControls}>
+                  <label>
+                    Sort by{" "}
+                    <select
+                      value={sortKey}
+                      style={styles.input}
+                      onChange={(e) => {
+                        console.log("🔽 Sort column changed:", e.target.value);
+                        setSortKey(e.target.value);
+                      }}
+                    >
+                      {sortColumns.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <button
+                    type="button"
+                    style={styles.btn}
+                    onClick={() => {
+                      setSortDir((d) => {
+                        const next = d === "asc" ? "desc" : "asc";
+                        console.log("🔁 Sort direction toggled:", d, "→", next);
+                        return next;
+                      });
+                    }}
+                  >
+                    {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Table content */}
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Model</th>
+                    <th style={styles.th}>Type</th>
+                    <th style={styles.th}>Indoor Capacity</th>
+                    <th style={styles.th}>Total Capacity</th>
+                    <th style={styles.th}>Units</th>
+                    <th style={styles.th}>Worst Margin</th>
+                    <th style={styles.th}>Total Oversize</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedResults.map((r, i) => (
+                    <tr
+                      key={r._rowId}
+                      style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
+                      onClick={() => {
+                        console.log("🟦 Row clicked:", r);
+                        setSelectedRow(r);
+                      }}
+                    >
+                      <td style={styles.td}>{r.Model}</td>
+                      <td style={styles.td}>{r.Type}</td>
+                      <td style={styles.td}>{r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}</td>
+                      <td style={styles.td}>{r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}</td>
+                      <td style={styles.td}>{r.Units}</td>
+                      <td style={styles.td}>{Number(r.worst_margin).toFixed(0)}</td>
+                      <td style={styles.td}>{Number(r.margin_total).toFixed(0)}</td>
+                    </tr>
+                  ))}
+                  {results.length === 0 && (
+                    <tr>
+                      <td style={styles.td} colSpan={7}>
+                        No results yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          
+          <section className="details">
+            <div style={{ ...styles.section, flex: 1 }}>
+              <div style={styles.sectionTitle}>Details</div>
+              <textarea
+                style={styles.details}
+                rows={detailsRows}
+                value={detailsText}
+                readOnly
+                placeholder="Select a result row to see details."
+              />
+            </div>
+          </section>
         </div>
       </div>
     </div>
