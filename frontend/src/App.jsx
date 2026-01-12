@@ -73,7 +73,7 @@ export default function App() {
   const [types, setTypes] = useState(["All"]);
 
   const [maxHeads, setMaxHeads] = useState(8);
-  const [roomCount, setRoomCount] = useState(2);
+  const [roomCount, setRoomCount] = useState(1);
 
   // --- dynamic room requirements ---
   const [reqs, setReqs] = useState(["9000", "7000"]); // same default vibe as your GUI
@@ -375,7 +375,7 @@ export default function App() {
     // room requirement inputs
     roomsGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+      gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
       gap: 8,
     },
 
