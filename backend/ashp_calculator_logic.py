@@ -201,6 +201,11 @@ def find_options(df: pd.DataFrame, reqs, type_filter="All", max_results=300):
 
         worst_margin = min(cap - req for req, cap in mapping)
         total_margin = sum(caps_sorted) - sum(reqs_sorted)
+        
+        row_details = {}
+        for c in DETAIL_COLS:
+            v = row.get(c)
+            row_details[c] = None if pd.isna(v) else float(v)
 
         results.append({
             "Model": row["Model"],
@@ -212,6 +217,7 @@ def find_options(df: pd.DataFrame, reqs, type_filter="All", max_results=300):
             "margin_total": float(total_margin),
             "mapping": mapping,
             "heads_detected": len(unit_cols),
+            **row_details,   # adds Op. Watts/Htg, SEER2, etc to payload
         })
 
         if len(results) >= max_results:
