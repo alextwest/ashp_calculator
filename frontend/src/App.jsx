@@ -83,6 +83,7 @@ export default function App() {
   const [results, setResults] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // --- sorting ---
   const DEFAULT_SORT_KEY = "Total Oversize";
@@ -278,16 +279,30 @@ export default function App() {
     return reqs.reduce((sum, v) => sum + (toNumberOrNull(v) ?? 0), 0);
   }, [reqs]);
 
+
+  // allowign searching to sort as well
+  const filteredResults = results.filter((row) => {
+    if (!searchQuery.trim()) return true;
+
+    const q = searchQuery.toLowerCase();
+
+    return (
+      row.Model?.toLowerCase().includes(q) ||
+      row.Manufacturer?.toLowerCase().includes(q) ||
+      row.Units?.toLowerCase().includes(q) // optional
+    );
+  });
+
   // Organizing list of models in order based on total oversize
   // sort results by Total Oversize (margin_total) smallest -> largest
   const sortedResults = useMemo(() => {
     console.log("📊 Recomputing sortedResults", {
       sortKey,
       sortDir,
-      resultCount: results.length,
+      resultCount: filteredResults.length,
     });
 
-    return [...results]
+    return [...filteredResults]
       .map((r, idx) => ({
         ...r,
         _rowId: `${r.Model}-${r.Type}-${r.Units}-${idx}`,
@@ -617,6 +632,21 @@ export default function App() {
               {/* Sticky header */}
               <div style={styles.resultsStickyHeader}>
                 <div style={styles.sectionTitle}>Results</div>
+
+                <label style={{ display: "block", marginBottom: 6 }}>
+                  Search model:
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="e.g. AOUH30KUAS1"
+                    style={{
+                      ...styles.input,
+                      marginLeft: 6,
+                      width: 220,
+                    }}
+                  />
+                </label>
 
                 <div style={styles.resultsControls}>
                   <label>
