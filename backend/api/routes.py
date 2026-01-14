@@ -32,6 +32,9 @@ def run(req: RunRequest):
 def meta(manufacturer: str = Query(...)):
     try:
         df = load_combos(manufacturer)
+
+        print("Top 10 rows of loaded data:", df.head(10))
+
         types = sorted(set(df["Type"].fillna("").astype(str).str.strip()))
         return {
             "ok": True,
