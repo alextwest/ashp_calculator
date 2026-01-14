@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import pandas as pd
+import threading
+import time
 import re
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -25,6 +27,64 @@ DETAIL_COLS = [
     "EER2",
     "HSPF2",
 ]
+
+# making changes so excel files aren't loaded every time on startup and are cached
+_df_lock = threading.Lock()
+_df_cache: dict[str, pd.DataFrame] = {}
+_df_mtime: dict[str, float] = {}
+
+def load_excel(manufacturer: str) -> pd.DataFrame:
+    path = MANUFACTURER_FILES[manufacturer]
+
+    print(f"🔄 Loading Excel [{manufacturer}]: {path}", flush=True)
+
+    df = pd.read_excel(
+        path,
+        sheet_name=SHEET_NAME,
+        engine="openpyxl"
+    )
+
+    st = path.stat()
+    print(
+        f"✅ Loaded [{manufacturer}] "
+        f"rows={len(df)} "
+        f"mtime={time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(st.st_mtime))} "
+        f"size={st.st_size}",
+        flush=True,
+    )
+
+    return df
+
+def get_combos_cached(manufacturer: str) -> pd.DataFrame:
+    if manufacturer not in MANUFACTURER_FILES:
+        raise ValueError(f"Unknown manufacturer: {manufacturer}")
+
+    path = MANUFACTURER_FILES[manufacturer]
+    if not path.exists():
+        raise FileNotFoundError(f"Excel file not found: {path}")
+
+    mtime = path.stat().st_mtime
+
+    with _df_lock:
+        cached = _df_cache.get(manufacturer)
+        cached_mtime = _df_mtime.get(manufacturer)
+
+        # Load if missing or file changed
+        if cached is None or cached_mtime != mtime:
+            t0 = time.time()
+            df = load_combos(manufacturer)  # ✅ reuse your function
+            _df_cache[manufacturer] = df
+            _df_mtime[manufacturer] = mtime
+
+            st = path.stat()
+            print(
+                f"📦 Loaded+cached {manufacturer}: rows={len(df)} "
+                f"mtime={time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(st.st_mtime))} "
+                f"size={st.st_size} in {time.time()-t0:.2f}s",
+                flush=True,
+            )
+
+        return _df_cache[manufacturer]
 
 def detect_unit_columns(df: pd.DataFrame):
     unit_nums = []
@@ -165,9 +225,10 @@ def run_logic(manufacturer: str, reqs, type_filter="All", max_results=300):
     """
     Backend-friendly wrapper used by FastAPI.
     """
-    df = load_combos(manufacturer)
+    #df = load_combos(manufacturer)
+    df = get_combos_cached(manufacturer)
 
-    print("Top 10 rows of loaded data:", df.head(10))
+    print("Top 10 rows of loaded data:", df.head(10), flush=True)
 
     return {
         "manufacturer": manufacturer,
