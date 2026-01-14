@@ -166,6 +166,9 @@ def run_logic(manufacturer: str, reqs, type_filter="All", max_results=300):
     Backend-friendly wrapper used by FastAPI.
     """
     df = load_combos(manufacturer)
+
+    print("Top 10 rows of loaded data:", df.head(10))
+
     return {
         "manufacturer": manufacturer,
         "type_filter": type_filter,
