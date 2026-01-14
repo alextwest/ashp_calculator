@@ -126,6 +126,8 @@ export default function App() {
     const seer2 = r["SEER2"];
     const eer2 = r["EER2"];
     const hspf2 = r["HSPF2"];
+    
+    console.log("🧾 details of selected row data:", r)
 
     const lines = [
       `Model: ${model}`,
