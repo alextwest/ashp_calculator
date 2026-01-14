@@ -15,6 +15,16 @@ MANUFACTURER_FILES = {
 
 SHEET_NAME = "indoor_combinations"
 
+DETAIL_COLS = [
+    "Op. Watts/Htg",
+    "Breaker Req.",
+    "BTU @ 5*F",
+    "BTU @ 0*F",
+    "Tonnage",
+    "SEER2",
+    "EER2",
+    "HSPF2",
+]
 
 def detect_unit_columns(df: pd.DataFrame):
     unit_nums = []
@@ -73,6 +83,16 @@ def load_combos(manufacturer: str) -> pd.DataFrame:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
     for c in cap_cols:
+        df[c] = df[c].astype(str).str.replace(",", "", regex=False).replace({"nan": None, "None": None})
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+    # make sure the columns exist (avoid KeyError if sheet missing them)
+    for c in DETAIL_COLS:
+        if c not in df.columns:
+            df[c] = None
+
+    # parse numeric columns (commas -> numbers)
+    for c in DETAIL_COLS:
         df[c] = df[c].astype(str).str.replace(",", "", regex=False).replace({"nan": None, "None": None})
         df[c] = pd.to_numeric(df[c], errors="coerce")
 

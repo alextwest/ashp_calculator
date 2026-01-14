@@ -92,6 +92,17 @@ export default function App() {
 
   const sortColumns = ["Total Oversize", "Worst Margin", "Indoor Capacity", "Total Capacity", "Model", "Type", "Units"]; 
 
+  // formatting numbers helper
+  const fmt = (v, digits = 0) => {
+    if (v === null || v === undefined || v === "") return "—";
+    const n = Number(v);
+    if (!Number.isFinite(n)) return String(v);
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
+  };
+
   // details autosize like your Tkinter Text box
   const detailsText = useMemo(() => {
     console.log("📝 computing detailsText, selectedRow =", selectedRow);
@@ -106,8 +117,24 @@ export default function App() {
     const totalCap = r["Total Capacity"] ?? "";
     const mapping = Array.isArray(r.mapping) ? r.mapping : [];
 
+    // New fields (these exist in the row, but you won’t show them as table columns)
+    const opWatts = r["Op. Watts/Htg"];
+    const breaker = r["Breaker Req."];
+    const btu5 = r["BTU @ 5*F"];
+    const btu0 = r["BTU @ 0*F"];
+    const tonnage = r["Tonnage"];
+    const seer2 = r["SEER2"];
+    const eer2 = r["EER2"];
+    const hspf2 = r["HSPF2"];
+
     const lines = [
       `Model: ${model}`,
+      "Performance:",
+      `  Op. Watts/Htg: ${fmt(opWatts)}`,
+      `  Breaker Req.: ${fmt(breaker)}`,
+      `  BTU @ 5°F: ${fmt(btu5)} | BTU @ 0°F: ${fmt(btu0)}`,
+      `  Tonnage: ${fmt(tonnage, 2)} | SEER2: ${fmt(seer2, 1)} | EER2: ${fmt(eer2, 1)} | HSPF2: ${fmt(hspf2, 1)}`,
+      "",
       `Type: ${type}`,
       `Units: ${units}`,
       `Indoor Capacity: ${indoorCap} | Total Capacity: ${totalCap}`,
