@@ -293,6 +293,26 @@ export default function App() {
     );
   });
 
+  // adjust these to match your real field names
+  const getModelText = (row) => String(row.Model ?? row.model ?? "");
+  const getMfrText   = (row) => String(row.Manufacturer ?? row.manufacturer ?? "");
+  const getUnitsText = (row) => String(row.Units ?? row.units ?? "");
+
+  const q = searchQuery.trim().toLowerCase();
+
+  const visibleResults = [...results]
+    .filter((r) => {
+      if (!q) return true;
+      return (
+        String(r.Model ?? "").toLowerCase().includes(q) ||
+        String(r.Units ?? "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (sortKey === "Units") return compareUnitsCombo(a.Units, b.Units, sortDir);
+      return compareValues(a[sortKey], b[sortKey], sortDir);
+    });
+
   // Organizing list of models in order based on total oversize
   // sort results by Total Oversize (margin_total) smallest -> largest
   const sortedResults = useMemo(() => {
@@ -670,12 +690,8 @@ export default function App() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="e.g. AOUH30KUAS1"
-                      style={{
-                        ...styles.input,
-                        marginLeft: 6,
-                        width: 220,
-                      }}
+                      placeholder="Search model… e.g. AOUH30KUAS1"
+                      style={{ ...styles.input, width: 240 }}
                     />
                   </label>
 
@@ -695,8 +711,9 @@ export default function App() {
                     <th style={styles.th}>Total Oversize</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {sortedResults.map((r, i) => (
+                  {visibleResults.map((r, i) => (
                     <tr
                       key={r._rowId}
                       style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
@@ -707,17 +724,25 @@ export default function App() {
                     >
                       <td style={styles.td}>{r.Model}</td>
                       <td style={styles.td}>{r.Type}</td>
-                      <td style={styles.td}>{r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}</td>
-                      <td style={styles.td}>{r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}</td>
+                      <td style={styles.td}>
+                        {r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}
+                      </td>
+                      <td style={styles.td}>
+                        {r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}
+                      </td>
                       <td style={styles.td}>{r.Units}</td>
                       <td style={styles.td}>{Number(r.worst_margin).toFixed(0)}</td>
                       <td style={styles.td}>{Number(r.margin_total).toFixed(0)}</td>
                     </tr>
                   ))}
-                  {results.length === 0 && (
+
+                  {/* Empty state should use visibleResults, not results */}
+                  {visibleResults.length === 0 && (
                     <tr>
                       <td style={styles.td} colSpan={7}>
-                        No results yet.
+                        {results.length === 0
+                          ? "No results yet."
+                          : "No matches for your search."}
                       </td>
                     </tr>
                   )}
