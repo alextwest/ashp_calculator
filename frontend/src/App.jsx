@@ -300,18 +300,44 @@ export default function App() {
 
   const q = searchQuery.trim().toLowerCase();
 
-  const visibleResults = [...results]
-    .filter((r) => {
-      if (!q) return true;
-      return (
-        String(r.Model ?? "").toLowerCase().includes(q) ||
-        String(r.Units ?? "").toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      if (sortKey === "Units") return compareUnitsCombo(a.Units, b.Units, sortDir);
+  const visibleResults = (() => {
+    console.log("🔍 Recomputing visibleResults");
+
+    const q = searchQuery.trim().toLowerCase();
+    console.log("🔎 Normalized query:", q);
+
+    const filtered = results.filter((r, idx) => {
+      const model = String(r.Model ?? "").toLowerCase();
+      const units = String(r.Units ?? "").toLowerCase();
+
+      const match = !q || model.includes(q) || units.includes(q);
+
+      if (q && idx < 5) {
+        console.log("   Row check:", {
+          model,
+          units,
+          match,
+        });
+      }
+
+      return match;
+    });
+
+    console.log(
+      `📊 Filtered results: ${filtered.length} / ${results.length}`
+    );
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortKey === "Units") {
+        return compareUnitsCombo(a.Units, b.Units, sortDir);
+      }
       return compareValues(a[sortKey], b[sortKey], sortDir);
     });
+
+    console.log("📐 Sorted results length:", sorted.length);
+
+    return sorted;
+  })();
 
   // Organizing list of models in order based on total oversize
   // sort results by Total Oversize (margin_total) smallest -> largest
@@ -689,7 +715,10 @@ export default function App() {
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        console.log("🔤 Search input changed:", e.target.value);
+                        setSearchQuery(e.target.value);
+                      }}
                       placeholder="Search model… e.g. AOUH30KUAS1"
                       style={{ ...styles.input, width: 240 }}
                     />
