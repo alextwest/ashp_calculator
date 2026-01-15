@@ -633,21 +633,6 @@ export default function App() {
               <div style={styles.resultsStickyHeader}>
                 <div style={styles.sectionTitle}>Results</div>
 
-                <label style={{ display: "block", marginBottom: 6 }}>
-                  Search model:
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="e.g. AOUH30KUAS1"
-                    style={{
-                      ...styles.input,
-                      marginLeft: 6,
-                      width: 220,
-                    }}
-                  />
-                </label>
-
                 <div style={styles.resultsControls}>
                   <label>
                     Sort by{" "}
@@ -678,6 +663,22 @@ export default function App() {
                   >
                     {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
                   </button>
+
+                  <label style={{ display: "block", marginBottom: 6 }}>
+                    Search model:
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="e.g. AOUH30KUAS1"
+                      style={{
+                        ...styles.input,
+                        marginLeft: 6,
+                        width: 220,
+                      }}
+                    />
+                  </label>
+
                 </div>
               </div>
 
