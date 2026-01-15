@@ -711,7 +711,7 @@ export default function App() {
                   </button>
 
                   <label style={{ display: "block", marginBottom: 6 }}>
-                    Search model:
+                    Search model: 
                     <input
                       type="text"
                       value={searchQuery}
