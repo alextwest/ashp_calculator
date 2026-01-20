@@ -119,7 +119,7 @@ export default function App() {
     const mapping = Array.isArray(r.mapping) ? r.mapping : [];
 
     // New fields (these exist in the row, but you won’t show them as table columns)
-    const opWatts = r["Op. Watts/Htg"];
+    const op_watts = r["Op. Watts/Htg"];
     const breaker = r["Breaker Req."];
     const btu5 = r["BTU @ 5*F"];
     const btu0 = r["BTU @ 0*F"];
@@ -133,7 +133,7 @@ export default function App() {
     const lines = [
       `Model: ${model}`,
       "Performance:",
-      `  Op. Watts/Htg: ${fmt(opWatts)}`,
+      `  Op. Watts/Htg: ${fmt(op_watts)}`,
       `  Breaker Req.: ${fmt(breaker)}`,
       `  BTU @ 5°F: ${fmt(btu5)} | BTU @ 0°F: ${fmt(btu0)}`,
       `  Tonnage: ${fmt(tonnage, 2)} | SEER2: ${fmt(seer2, 1)} | EER2: ${fmt(eer2, 1)} | HSPF2: ${fmt(hspf2, 1)}`,
