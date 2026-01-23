@@ -467,7 +467,7 @@ export default function App() {
     // room requirement inputs
     roomsGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+      gridTemplateColumns: "repeat(auto-fill, 160px)", //"repeat(auto-fit, minmax(100px, 1fr))", // i dont want to autofitting across the whole width
       gap: 8,
     },
 
