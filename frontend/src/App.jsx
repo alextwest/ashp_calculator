@@ -300,44 +300,44 @@ export default function App() {
 
   const q = searchQuery.trim().toLowerCase();
 
-  const visibleResults = (() => {
-    console.log("🔍 Recomputing visibleResults");
+  // const visibleResults = (() => {
+  //   console.log("🔍 Recomputing visibleResults");
 
-    const q = searchQuery.trim().toLowerCase();
-    console.log("🔎 Normalized query:", q);
+  //   const q = searchQuery.trim().toLowerCase();
+  //   console.log("🔎 Normalized query:", q);
 
-    const filtered = results.filter((r, idx) => {
-      const model = String(r.Model ?? "").toLowerCase();
-      const units = String(r.Units ?? "").toLowerCase();
+  //   const filtered = results.filter((r, idx) => {
+  //     const model = String(r.Model ?? "").toLowerCase();
+  //     const units = String(r.Units ?? "").toLowerCase();
 
-      const match = !q || model.includes(q) || units.includes(q);
+  //     const match = !q || model.includes(q) || units.includes(q);
 
-      if (q && idx < 5) {
-        console.log("   Row check:", {
-          model,
-          units,
-          match,
-        });
-      }
+  //     if (q && idx < 5) {
+  //       console.log("   Row check:", {
+  //         model,
+  //         units,
+  //         match,
+  //       });
+  //     }
 
-      return match;
-    });
+  //     return match;
+  //   });
 
-    console.log(
-      `📊 Filtered results: ${filtered.length} / ${results.length}`
-    );
+  //   console.log(
+  //     `📊 Filtered results: ${filtered.length} / ${results.length}`
+  //   );
 
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortKey === "Units") {
-        return compareUnitsCombo(a.Units, b.Units, sortDir);
-      }
-      return compareValues(a[sortKey], b[sortKey], sortDir);
-    });
+  //   const sorted = [...filtered].sort((a, b) => {
+  //     if (sortKey === "Units") {
+  //       return compareUnitsCombo(a.Units, b.Units, sortDir);
+  //     }
+  //     return compareValues(a[sortKey], b[sortKey], sortDir);
+  //   });
 
-    console.log("📐 Sorted results length:", sorted.length);
+  //   console.log("📐 Sorted results length:", sorted.length);
 
-    return sorted;
-  })();
+  //   return sorted;
+  // })();
 
   // Organizing list of models in order based on total oversize
   // sort results by Total Oversize (margin_total) smallest -> largest
@@ -767,8 +767,8 @@ export default function App() {
                     </tr>
                   ))}
 
-                  {/* Empty state should use visibleResults, not results */}
-                  {visibleResults.length === 0 && (
+                  {/* Empty state should use sortedResults, not results */}
+                  {sortedResults.length === 0 && (
                     <tr>
                       <td style={styles.td} colSpan={7}>
                         {results.length === 0
