@@ -467,8 +467,8 @@ export default function App() {
     // room requirement inputs
     roomsGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, 160px)", //"repeat(auto-fit, minmax(100px, 1fr))", // i dont want to autofitting across the whole width
-      gap: 8,
+      gridTemplateColumns: "repeat(auto-fill, 120px)", //"repeat(auto-fit, minmax(100px, 1fr))", // i dont want to autofitting across the whole width
+      gap: 12,
     },
 
     // results + details split pane
@@ -716,7 +716,7 @@ export default function App() {
                     {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
                   </button>
 
-                  <label style={{ display: "block", marginBottom: 6,  marginRight: 6 }}>
+                  <label style={{ display: "block", marginBottom: 6 }}>
                     Search model: 
                     <input
                       type="text"
@@ -726,7 +726,7 @@ export default function App() {
                         setSearchQuery(e.target.value);
                       }}
                       placeholder="Search model… e.g. AOUH30KUAS1"
-                      style={{ ...styles.input, width: 240 }}
+                      style={{ ...styles.input, width: 240, marginLeft: 8 }}
                     />
                   </label>
 
