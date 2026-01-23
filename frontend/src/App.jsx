@@ -380,6 +380,13 @@ export default function App() {
   }, [filteredResults, sortKey, sortDir]);
 
   // layout styles (simple, clean)
+  const inputBase = {
+    padding: "6px 8px",
+    fontSize: 13,
+    border: "1px solid #999",
+    borderRadius: 4,
+  };
+
   const styles = {
     page: {
       maxWidth: 1800,
@@ -486,7 +493,7 @@ export default function App() {
     },
 
     reqInput: {
-      ...styles.input,
+      ...inputBase,
       width: "100%",
       boxSizing: "border-box",
       minWidth: 0, // important so it doesn’t force overflow
