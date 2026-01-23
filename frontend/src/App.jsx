@@ -499,7 +499,11 @@ export default function App() {
       zIndex: 10,
     },
 
-    td: { padding: "6px 8px", borderBottom: "1px solid #eee" },
+    td: { 
+      padding: "6px 8px", 
+      borderBottom: "1px solid #eee",
+      textAlign: "center",
+    },
 
     row: { cursor: "pointer" },
 
