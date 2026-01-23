@@ -373,7 +373,7 @@ export default function App() {
         }
 
         // (optional) noisy debug; remove once verified
-        //console.log("🧮 Compare", { sortKey, sortDir, a: av, b: bv });
+        console.log("🧮 Compare", { sortKey, sortDir, a: av, b: bv });
 
         return compareValues(av, bv, sortDir);
       });
@@ -712,7 +712,7 @@ export default function App() {
                     {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
                   </button>
 
-                  <label style={{ display: "block", marginBottom: 6 }}>
+                  <label style={{ display: "block", marginBottom: 6,  marginRight: 6 }}>
                     Search model: 
                     <input
                       type="text"
