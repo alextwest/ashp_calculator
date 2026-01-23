@@ -762,8 +762,8 @@ export default function App() {
                         setSelectedRow(r);
                       }}
                     >
-                      <td style={styles.tdCenter}>{r.Model}</td>
-                      <td style={styles.tdCenterd}>{r.Type}</td>
+                      <td style={styles.td}>{r.Model}</td>
+                      <td style={styles.td}>{r.Type}</td>
                       <td style={styles.tdCenter}>
                         {r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}
                       </td>
