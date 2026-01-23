@@ -373,7 +373,7 @@ export default function App() {
         }
 
         // (optional) noisy debug; remove once verified
-        console.log("🧮 Compare", { sortKey, sortDir, a: av, b: bv });
+        //console.log("🧮 Compare", { sortKey, sortDir, a: av, b: bv });
 
         return compareValues(av, bv, sortDir);
       });
@@ -501,6 +501,11 @@ export default function App() {
 
     td: { 
       padding: "6px 8px", 
+      borderBottom: "1px solid #eee",
+    },
+
+    tdCenter: {
+      padding: "6px 8px",
       borderBottom: "1px solid #eee",
       textAlign: "center",
     },
@@ -757,17 +762,17 @@ export default function App() {
                         setSelectedRow(r);
                       }}
                     >
-                      <td style={styles.td}>{r.Model}</td>
-                      <td style={styles.td}>{r.Type}</td>
-                      <td style={styles.td}>
+                      <td style={styles.tdCenter}>{r.Model}</td>
+                      <td style={styles.tdCenterd}>{r.Type}</td>
+                      <td style={styles.tdCenter}>
                         {r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}
                       </td>
-                      <td style={styles.td}>
+                      <td style={styles.tdCenter}>
                         {r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}
                       </td>
-                      <td style={styles.td}>{r.Units}</td>
-                      <td style={styles.td}>{Number(r.worst_margin).toFixed(0)}</td>
-                      <td style={styles.td}>{Number(r.margin_total).toFixed(0)}</td>
+                      <td style={styles.tdCenter}>{r.Units}</td>
+                      <td style={styles.tdCenter}>{Number(r.worst_margin).toFixed(0)}</td>
+                      <td style={styles.tdCenter}>{Number(r.margin_total).toFixed(0)}</td>
                     </tr>
                   ))}
 
