@@ -380,13 +380,6 @@ export default function App() {
   }, [filteredResults, sortKey, sortDir]);
 
   // layout styles (simple, clean)
-  const inputBase = {
-    padding: "6px 8px",
-    fontSize: 13,
-    border: "1px solid #999",
-    borderRadius: 4,
-  };
-
   const styles = {
     page: {
       maxWidth: 1800,
@@ -490,13 +483,6 @@ export default function App() {
 
     reqLabelText: {
       lineHeight: 1.1,
-    },
-
-    reqInput: {
-      ...inputBase,
-      width: "100%",
-      boxSizing: "border-box",
-      minWidth: 0, // important so it doesn’t force overflow
     },
 
     // results + details split pane
@@ -688,7 +674,7 @@ export default function App() {
                 <label key={idx} style={styles.reqLabel}>
                   <span style={styles.reqLabelText}>Req {idx + 1}</span>
                   <input
-                    style={styles.reqInput}
+                    style={{ ...styles.input, width: "100%", boxSizing: "border-box", minWidth: 0 }}
                     value={val}
                     onChange={(e) => {
                       const v = e.target.value;
