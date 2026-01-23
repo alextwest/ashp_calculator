@@ -416,6 +416,8 @@ export default function App() {
       flexDirection: "column",
       gap: 4,
       fontSize: 12,
+      // hard safety against weird inherited positioning:
+      position: "relative",
     },
 
     field: {
@@ -469,6 +471,7 @@ export default function App() {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fill, 120px)", //"repeat(auto-fit, minmax(100px, 1fr))", // i dont want to autofitting across the whole width
       gap: 12,
+      alignItems: "start",
     },
 
     // results + details split pane
