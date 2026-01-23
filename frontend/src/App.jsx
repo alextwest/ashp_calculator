@@ -474,6 +474,24 @@ export default function App() {
       alignItems: "start",
     },
 
+    reqLabel: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 4, // now works because span + input are element children
+      fontSize: 12,
+    },
+
+    reqLabelText: {
+      lineHeight: 1.1,
+    },
+
+    reqInput: {
+      ...styles.input,
+      width: "100%",
+      boxSizing: "border-box",
+      minWidth: 0, // important so it doesn’t force overflow
+    },
+
     // results + details split pane
     split: {
       display: "grid",
@@ -660,10 +678,10 @@ export default function App() {
             </div>
             <div style={styles.roomsGrid}>
               {reqs.map((val, idx) => (
-                <label key={idx} style={styles.label}>
-                  Req {idx + 1}
+                <label key={idx} style={styles.reqLabel}>
+                  <span style={styles.reqLabelText}>Req {idx + 1}</span>
                   <input
-                    style={styles.input}
+                    style={styles.reqInput}
                     value={val}
                     onChange={(e) => {
                       const v = e.target.value;
