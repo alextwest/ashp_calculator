@@ -352,8 +352,10 @@ export default function App() {
       .map((r, idx) => ({
         ...r,
         _rowId: `${r.Model}-${r.Type}-${r.Units}-${idx}`,
-        "Total Oversize": Number(r.margin_total ?? 0),
-        "Worst Margin": Number(r.worst_margin ?? 0),
+        //"Total Oversize": Number(r.margin_total ?? 0),
+        //"Worst Margin": Number(r.worst_margin ?? 0),
+        "Total Oversize": toNumberOrNull(r.margin_total),
+        "Worst Margin": toNumberOrNull(r.worst_margin),
         "Indoor Capacity": toNumberOrNull(r["Indoor Capacity"]),
         "Total Capacity": toNumberOrNull(r["Total Capacity"]),
         "Units": r.Units,
