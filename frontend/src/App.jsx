@@ -352,10 +352,10 @@ export default function App() {
       .map((r, idx) => ({
         ...r,
         _rowId: `${r.Model}-${r.Type}-${r.Units}-${idx}`,
-        //"Total Oversize": Number(r.margin_total ?? 0),
-        //"Worst Margin": Number(r.worst_margin ?? 0),
-        "Total Oversize": toNumberOrNull(r.margin_total),
-        "Worst Margin": toNumberOrNull(r.worst_margin),
+        "Total Oversize": Number(r.margin_total ?? 0),
+        "Worst Margin": Number(r.worst_margin ?? 0),
+        //"Total Oversize": toNumberOrNull(r.margin_total),
+        //"Worst Margin": toNumberOrNull(r.worst_margin),
         "Indoor Capacity": toNumberOrNull(r["Indoor Capacity"]),
         "Total Capacity": toNumberOrNull(r["Total Capacity"]),
         "Units": r.Units,
@@ -377,7 +377,7 @@ export default function App() {
 
         return compareValues(av, bv, sortDir);
       });
-  }, [results, sortKey, sortDir]);
+  }, [filteredResults, sortKey, sortDir]);
 
   // layout styles (simple, clean)
   const styles = {
@@ -744,7 +744,7 @@ export default function App() {
                 </thead>
 
                 <tbody>
-                  {visibleResults.map((r, i) => (
+                  {sortedResults.map((r, i) => (
                     <tr
                       key={r._rowId}
                       style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
