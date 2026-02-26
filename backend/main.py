@@ -37,6 +37,14 @@ if DIST_DIR.exists():
         return FileResponse(DIST_DIR / "index.html")
 
 
+@app.get("/api/_debug/routes")
+def debug_routes():
+    out = []
+    for r in app.routes:
+        methods = sorted(getattr(r, "methods", []) or [])
+        path = getattr(r, "path", "")
+        out.append({"path": path, "methods": methods})
+    return out
 
 ########################################################################################################
 # TEMPORARY ROOM JSON INPUT FOR TESTING
@@ -215,4 +223,5 @@ def ai_recommend(req: RecommendReq):
     building_summary = {"loads": loads_for_run, "text": "stub"}
     intent = get_intent(building_summary=building_summary, user_text=req.user_text, model=req.intent_model or "gpt-5.2")
     rec = recommend_from_intent(intent, building_summary)
+
     return {"intent": intent, "rec": rec}
