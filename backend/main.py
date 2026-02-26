@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi import Request
 from pathlib import Path
 
 # for ai agent 
@@ -21,6 +22,16 @@ logging.info("🔄 load_combos called")
 
 app = FastAPI()
 app.include_router(api_router)
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # tighten later to your SWA/App domain(s)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 print("hello from request", flush=True)
 
@@ -45,6 +56,11 @@ def debug_routes():
         path = getattr(r, "path", "")
         out.append({"path": path, "methods": methods})
     return out
+
+@app.options("/{rest_of_path:path}")
+def options_passthrough(rest_of_path: str, request: Request):
+    # If you ever see this hit, you know OPTIONS is reaching FastAPI.
+    return {}
 
 ########################################################################################################
 # TEMPORARY ROOM JSON INPUT FOR TESTING
