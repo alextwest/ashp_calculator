@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
+// import for AI agent helpers
+import { aiRecommend, candidatesToRows, buildAiDetailsText } from "./aiAgent";
+
 const MANUFACTURERS = ["Fujitsu", "LG"];
 
 function clamp(n, min, max) {
@@ -92,6 +95,43 @@ export default function App() {
   const [sortDir, setSortDir] = useState("asc");
 
   const sortColumns = ["Total Oversize", "Worst Margin", "Indoor Capacity", "Total Capacity", "Model", "Type", "Units"]; 
+
+  // setting variables for AI agent integration
+  const [aiUserText, setAiUserText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+
+  const [buildingSummary, setBuildingSummary] = useState({
+    zones: [{ zone_name: "First story" }, { zone_name: "Second story" }],
+    rooms: [
+      { zone_name: "First story", room_name: "Kitchen", heating_btu_hr: 3367 },
+      { zone_name: "First story", room_name: "Living Room", heating_btu_hr: 5087 },
+    ],
+  });
+
+  // function to run AI agent
+  async function runAi() {
+    try {
+      setAiLoading(true);
+      setAiError("");
+
+      const payload = await aiRecommend({
+        buildingSummary,
+        userText: aiUserText,
+      });
+
+      const draft = payload?.rec?.drafts?.[0];
+      const aiRows = candidatesToRows(draft);
+
+      setResults(aiRows);       // reuse your existing results table
+      setSelectedRow(null);
+      setDetailsText("");
+    } catch (e) {
+      setAiError(e.message || String(e));
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   // formatting numbers helper
   const fmt = (v, digits = 0) => {
@@ -704,6 +744,26 @@ export default function App() {
               <div style={styles.resultsStickyHeader}>
                 <div style={styles.sectionTitle}>Results</div>
 
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="text"
+                    value={aiUserText}
+                    onChange={(e) => setAiUserText(e.target.value)}
+                    placeholder="AI request: e.g. 2nd floor, 3 heads, no hallway"
+                    style={{ ...styles.input, width: 360 }}
+                  />
+                  <button
+                    type="button"
+                    style={styles.btn}
+                    disabled={aiLoading || !aiUserText.trim()}
+                    onClick={runAi}
+                  >
+                    {aiLoading ? "Thinking…" : "AI Recommend"}
+                  </button>
+                </div>
+
+                {aiError ? <div style={{ color: "crimson", marginTop: 6 }}>{aiError}</div> : null}
+
                 <div style={styles.resultsControls}>
                   <label>
                     Sort by{" "}
@@ -774,6 +834,13 @@ export default function App() {
                       onClick={() => {
                         console.log("🟦 Row clicked:", r);
                         setSelectedRow(r);
+
+                        if (r.__aiCandidate) {
+                          setDetailsText(buildAiDetailsText(r));
+                        } else {
+                          setDetailsText(existingDetailsTextForRow(r)); // whatever you already do
+                        }
+
                       }}
                     >
                       <td style={styles.td}>{r.Model}</td>
