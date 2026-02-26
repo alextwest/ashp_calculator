@@ -218,6 +218,13 @@ def filter_loads_by_selection(loads: dict, selected_ids: list[str]) -> dict:
     }
 #######################################################################################################
 
+def normalize_intent_model(m: str | None) -> str:
+    if not m:
+        return "gpt-5.2"
+    m = m.strip()
+    if m.lower() in {"string", "default", "none", "null"}:
+        return "gpt-5.2"
+    return m
 
 # adding in logic for AI agent to recommend ASHP system design
 class RecommendReq(BaseModel):
@@ -243,10 +250,11 @@ def ai_recommend(req: RecommendReq):
             "selected_ids": selected,
         }
 
+        model_name = normalize_intent_model(req.intent_model)
         intent = get_intent(
             building_summary=building_summary,
             user_text=req.user_text,
-            model=req.intent_model or "gpt-5.2",
+            model=model_name,
         )
         rec = recommend_from_intent(intent, building_summary)
         return {"intent": intent, "rec": rec}
