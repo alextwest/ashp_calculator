@@ -18,10 +18,11 @@ def get_openai_client():
 # -----------------------------
 # 1) HARD-CODE YOUR EXCEL PATHS
 # -----------------------------
+BASE_DIR = Path(__file__).resolve().parent  # points to backend/
+
 EXCEL_PATHS = {
-    # Example (replace with your real workbook paths)
-    "fujitsu": r"C:\Users\AlexWest\OneDrive - Paradigm Energy Services\data_operations\ashp_calculator\backend\assets\data\fujitsu_capacities_calculated.xlsx",
-    "lg": r"C:\Users\AlexWest\OneDrive - Paradigm Energy Services\data_operations\ashp_calculator\backend\assets\data\lg_capacities_calculated.xlsx",
+    "fujitsu": BASE_DIR / "assets" / "data" / "fujitsu_capacities_calculated.xlsx",
+    "lg": BASE_DIR / "assets" / "data" / "lg_capacities_calculated.xlsx",
 }
 
 LOADS_SCHEMA = {
