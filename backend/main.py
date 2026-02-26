@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -226,14 +228,33 @@ class RecommendReq(BaseModel):
 @app.post("/api/ai/recommend")
 def ai_recommend(req: RecommendReq):
 
-    loads = default_loads()
-    loads_for_run = filter_loads_by_selection(loads, req.selected_ids)
+    try:
+        # normalize selection values from UI
+        selected = req.selected_ids or ["whole_unit"]
+        selected = ["WHOLE" if s in ("whole_unit", "WHOLE") else s for s in selected]
 
-    building_summary = {"loads": loads_for_run, "text": "stub"}
-    intent = get_intent(building_summary=building_summary, user_text=req.user_text, model=req.intent_model or "gpt-5.2")
-    rec = recommend_from_intent(intent, building_summary)
+        # loads stub (or real loads later)
+        loads = default_loads()
 
-    return {"intent": intent, "rec": rec}
+        # build building_summary for your intent + deterministic logic
+        building_summary = {
+            "loads": loads,
+            "text": "stub building summary",
+            "selected_ids": selected,
+        }
+
+        intent = get_intent(
+            building_summary=building_summary,
+            user_text=req.user_text,
+            model=req.intent_model or "gpt-5.2",
+        )
+        rec = recommend_from_intent(intent, building_summary)
+        return {"intent": intent, "rec": rec}
+
+    except Exception as e:
+        print("AI RECOMMEND ERROR:", repr(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
