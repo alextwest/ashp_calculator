@@ -811,6 +811,7 @@ def interactive_loop(building_summary: dict, model_intent: str, out_path: Path):
 
             print("Invalid input.")
 
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("pdf", type=str, help="Path to Conduit PDF")

@@ -763,6 +763,7 @@ export default function App() {
                 </div>
 
                 {aiError ? <div style={{ color: "crimson", marginTop: 6 }}>{aiError}</div> : null}
+                <br></br>
 
                 <div style={styles.resultsControls}>
                   <label>

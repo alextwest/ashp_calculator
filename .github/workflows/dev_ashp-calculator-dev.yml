@@ -1,4 +1,4 @@
-name: Build and deploy (React + FastAPI) to Azure Web App
+name: Build and deploy (React + FastAPI) to Azure Web DEV App
 
 on:
   push:
