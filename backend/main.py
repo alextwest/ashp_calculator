@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi import Request
 from pathlib import Path
+from fastapi import HTTPException
 
 # for ai agent 
 from pydantic import BaseModel
@@ -19,6 +20,11 @@ logging.basicConfig(
 )
 
 logging.info("🔄 load_combos called")
+
+## Defining paths for static mounting at the end
+DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
+STATIC_DIR = DIST_DIR / "static"
+INDEX_HTML = DIST_DIR / "index.html"
 
 app = FastAPI()
 app.include_router(api_router)
@@ -231,21 +237,20 @@ def ai_recommend(req: RecommendReq):
 
 
 # Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
-DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-if DIST_DIR.exists():
-    # Serve static assets (React build)
-    app.mount("/static", StaticFiles(directory=DIST_DIR / "static"), name="static")
-
-    # Serve the SPA index at /
     @app.get("/")
     def spa_index():
-        return FileResponse(DIST_DIR / "index.html")
+        if INDEX_HTML.exists():
+            return FileResponse(INDEX_HTML)
+        raise HTTPException(status_code=404, detail="index.html not found")
 
-    # SPA fallback ONLY for non-API paths
     @app.get("/{full_path:path}")
-    def spa_fallback(full_path: str, request: Request):
-        # IMPORTANT: never hijack API routes
+    def spa_fallback(full_path: str):
+        # never hijack API routes
         if full_path.startswith("api/"):
-            return {"detail": "Not Found"}  # or raise HTTPException(404)
-        return FileResponse(DIST_DIR / "index.html")
+            raise HTTPException(status_code=404, detail="Not Found")
+        if INDEX_HTML.exists():
+            return FileResponse(INDEX_HTML)
+        raise HTTPException(status_code=404, detail="index.html not found")
