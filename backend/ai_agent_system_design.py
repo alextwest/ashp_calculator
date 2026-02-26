@@ -9,7 +9,11 @@ from collections import defaultdict
 
 from openai import OpenAI
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+def get_openai_client():
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+    return OpenAI(api_key=api_key)
 
 # -----------------------------
 # 1) HARD-CODE YOUR EXCEL PATHS
@@ -87,6 +91,7 @@ def parse_pdf(pdf_path: Path, model: str) -> dict:
     pdf_bytes = pdf_path.read_bytes()
     pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
+    client = get_openai_client()
     resp = client.responses.create(
         model=model,
         instructions=(
@@ -374,6 +379,8 @@ INTENT_SCHEMA = {
 
 def get_intent(building_summary: dict, user_text: str, model: str) -> dict:
     print("DEBUG preferences schema:", INTENT_SCHEMA["schema"]["properties"]["systems"]["items"]["properties"]["preferences"])
+    
+    client = get_openai_client()
     resp = client.responses.create(
         model=model,
         input=[
