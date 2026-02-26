@@ -35,19 +35,6 @@ app.add_middleware(
 
 print("hello from request", flush=True)
 
-# --- Serve React build (after CI builds frontend) ---
-# We will copy the built frontend into: backend/frontend_dist/
-DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
-
-if DIST_DIR.exists():
-    app.mount("/", StaticFiles(directory=DIST_DIR, html=True), name="static")
-
-    # SPA fallback (React Router safe)
-    @app.get("/{full_path:path}")
-    def spa_fallback(full_path: str):
-        return FileResponse(DIST_DIR / "index.html")
-
-
 @app.get("/api/_debug/routes")
 def debug_routes():
     out = []
@@ -227,7 +214,7 @@ def filter_loads_by_selection(loads: dict, selected_ids: list[str]) -> dict:
 # adding in logic for AI agent to recommend ASHP system design
 class RecommendReq(BaseModel):
     user_text: str
-    selected_ids: list[str] = ["WHOLE"]
+    selected_ids: list[str] = ["whole_unit"]
     intent_model: str | None = None
 
 @app.post("/api/ai/recommend")
@@ -241,3 +228,24 @@ def ai_recommend(req: RecommendReq):
     rec = recommend_from_intent(intent, building_summary)
 
     return {"intent": intent, "rec": rec}
+
+
+# Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
+DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
+
+if DIST_DIR.exists():
+    # Serve static assets (React build)
+    app.mount("/static", StaticFiles(directory=DIST_DIR / "static"), name="static")
+
+    # Serve the SPA index at /
+    @app.get("/")
+    def spa_index():
+        return FileResponse(DIST_DIR / "index.html")
+
+    # SPA fallback ONLY for non-API paths
+    @app.get("/{full_path:path}")
+    def spa_fallback(full_path: str, request: Request):
+        # IMPORTANT: never hijack API routes
+        if full_path.startswith("api/"):
+            return {"detail": "Not Found"}  # or raise HTTPException(404)
+        return FileResponse(DIST_DIR / "index.html")
