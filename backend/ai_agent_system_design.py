@@ -9,7 +9,7 @@ from collections import defaultdict
 
 from openai import OpenAI
 
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # -----------------------------
 # 1) HARD-CODE YOUR EXCEL PATHS

@@ -53,6 +53,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Verify OpenAI installed
+        run: |
+          echo "Checking OpenAI installation..."
+          python -m pip show openai || echo "OpenAI NOT FOUND"
+          python -c "import openai; print('OpenAI import successful')" || echo "OpenAI import FAILED"
+
       # Optional smoke import check (fails fast if imports are broken)
       - name: Backend import smoke test
         working-directory: backend
