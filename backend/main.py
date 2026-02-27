@@ -44,9 +44,9 @@ app.add_middleware(
 print("hello from request", flush=True)
 
 
-@app.get("/")
-def home():
-    return RedirectResponse("/docs")
+# @app.get("/")
+# def home():
+#     return RedirectResponse("/docs")
 
 @app.get("/api/_debug/routes")
 def debug_routes():
@@ -271,20 +271,25 @@ def ai_recommend(req: RecommendReq):
 
 
 # Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
-if STATIC_DIR.exists():
+if STATIC_DIR.exists() and INDEX_HTML.exists():
+    # React static assets
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+    # Serve the SPA entry
     @app.get("/")
     def spa_index():
-        if INDEX_HTML.exists():
-            return FileResponse(INDEX_HTML)
-        raise HTTPException(status_code=404, detail="index.html not found")
+        return FileResponse(INDEX_HTML)
 
+    # SPA fallback for client-side routing, but never for /api/*
     @app.get("/{full_path:path}")
-    def spa_fallback(full_path: str):
-        # never hijack API routes
+    def spa_fallback(full_path: str, request: Request):
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="Not Found")
-        if INDEX_HTML.exists():
-            return FileResponse(INDEX_HTML)
-        raise HTTPException(status_code=404, detail="index.html not found")
+        return FileResponse(INDEX_HTML)
+else:
+    # If frontend isn't built/deployed, at least make / not 405
+    from fastapi.responses import RedirectResponse
+
+    @app.get("/")
+    def home():
+        return RedirectResponse("/docs")
