@@ -102,9 +102,15 @@ export function buildAiDetailsText(row) {
   lines.push("Selected Candidate");
   lines.push(`Outdoor: ${c.outdoor_model || ""}`);
   lines.push(`Mix: ${c.unit_mix || ""}`);
+
+  lines.push(`Worst margin: ${Number(r.worst_margin ?? 0).toFixed(0)}`);
+  lines.push(`Total oversize: ${Number(r.margin_total ?? 0).toFixed(0)}`);
+
   if (c.btu_5f != null) lines.push(`BTU @5F: ${Number(c.btu_5f).toFixed(0)}`);
   if (c.btu_0f != null) lines.push(`BTU @0F: ${Number(c.btu_0f).toFixed(0)}`);
   if (c.total_capacity != null) lines.push(`Total: ${Number(c.total_capacity).toFixed(0)}`);
+  lines.push("");
+  
   if (c.breaker_req != null) lines.push(`Breaker: ${Number(c.breaker_req).toFixed(0)}A`);
   if (c.op_watts_htg != null) lines.push(`OpWatts(Htg): ${Number(c.op_watts_htg).toFixed(0)}`);
   lines.push(`SEER2: ${c.seer2 ?? ""}  EER2: ${c.eer2 ?? ""}  HSPF2: ${c.hspf2 ?? ""}`);
