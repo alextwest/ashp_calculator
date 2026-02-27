@@ -1,22 +1,19 @@
 // Script containing helpers to run the AI agent on the ashp calculator to propose a system design based on users needs and thought process
 
 // ---- 1) API call: summary + user text -> { intent, rec }
-export async function aiRecommend({ buildingSummary, userText }) {
-  const res = await fetch("/api/ai/recommend", {
+export async function aiRecommend(body) {
+  const resp = await fetch("/api/ai/recommend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      building_summary: buildingSummary,
-      user_text: userText,
-    }),
+    body: JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`AI recommend failed (${res.status}): ${txt}`);
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`AI recommend failed (${resp.status}): ${txt}`);
   }
 
-  return res.json(); // { intent, rec }
+  return await resp.json();
 }
 
 // ---- 2) Map AI candidates -> existing table rows

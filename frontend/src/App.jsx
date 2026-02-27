@@ -101,29 +101,37 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  const [buildingSummary, setBuildingSummary] = useState({
-    zones: [{ zone_name: "First story" }, { zone_name: "Second story" }],
-    rooms: [
-      { zone_name: "First story", room_name: "Kitchen", heating_btu_hr: 3367 },
-      { zone_name: "First story", room_name: "Living Room", heating_btu_hr: 5087 },
-    ],
-  });
+  const [roomCatalog, setRoomCatalog] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(["whole_unit"]); // default
+
+  useEffect(() => {
+    fetch("/api/ai/catalog")
+      .then(r => r.json())
+      .then(setRoomCatalog)
+      .catch(console.error);
+  }, []);
 
   // function to run AI agent
   async function runAi() {
+    if (!roomCatalog) {
+      setAiError("Room catalog not loaded yet.");
+      return;
+    }
+    
     try {
       setAiLoading(true);
       setAiError("");
 
       const payload = await aiRecommend({
-        buildingSummary,
-        userText: aiUserText,
+        user_text: aiUserText,
+        selected_ids: selectedIds,     // IMPORTANT
+        // intent_model: "gpt-5.2",     // optional; omit unless you want it
       });
 
       const draft = payload?.rec?.drafts?.[0];
       const aiRows = candidatesToRows(draft);
 
-      setResults(aiRows);       // reuse your existing results table
+      setResults(aiRows);
       setSelectedRow(null);
       setDetailsText("");
     } catch (e) {

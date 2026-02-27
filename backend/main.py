@@ -269,6 +269,10 @@ def ai_recommend(req: RecommendReq):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/ai/catalog")
+def ai_catalog():
+    loads = default_loads()
+    return build_room_catalog(loads)   # items + whole_unit_option
 
 # Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
 if STATIC_DIR.exists() and INDEX_HTML.exists():
