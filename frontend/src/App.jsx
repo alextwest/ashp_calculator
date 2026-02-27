@@ -105,14 +105,28 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState(["whole_unit"]); // default
 
   useEffect(() => {
+    console.log("Fetching AI catalog...");
+
     fetch("/api/ai/catalog")
-      .then(r => r.json())
-      .then(setRoomCatalog)
-      .catch(console.error);
+      .then(r => {
+        console.log("Catalog response status:", r.status);
+        return r.json();
+      })
+      .then(data => {
+        console.log("Catalog data:", data);
+        setRoomCatalog(data);
+      })
+      .catch(e => {
+        console.error("Catalog fetch error:", e);
+        setAiError(e.message || String(e));
+      });
   }, []);
 
   // function to run AI agent
   async function runAi() {
+    console.log("Room Catalog for AI agent:", roomCatalog);
+    console.log("selectedIds:", selectedIds);
+    console.log("🤖 Running AI agent with user text:", aiUserText);
     if (!roomCatalog) {
       setAiError("Room catalog not loaded yet.");
       return;
