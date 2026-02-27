@@ -8,6 +8,8 @@ export async function aiRecommend(body) {
     body: JSON.stringify(body),
   });
 
+  console.log("AI recommend response:", resp);
+
   if (!resp.ok) {
     const txt = await resp.text();
     throw new Error(`AI recommend failed (${resp.status}): ${txt}`);
