@@ -18,38 +18,61 @@ export async function aiRecommend(body) {
   return await resp.json();
 }
 
+function computeMarginsFromMapping(mapping) {
+  const pairs = Array.isArray(mapping) ? mapping : [];
+  if (!pairs.length) return { worst_margin: null, margin_total: null };
+
+  const deltas = pairs
+    .map(([req, cap]) => (Number(cap) || 0) - (Number(req) || 0));
+
+  return {
+    worst_margin: Math.min(...deltas),
+    margin_total: deltas.reduce((a, b) => a + b, 0),
+  };
+}
+
 // ---- 2) Map AI candidates -> existing table rows
 export function candidatesToRows(draft) {
   const candidates = draft?.candidates || [];
   const distribution = draft?.distribution || "";
 
-  return candidates.map((c, idx) => ({
-    _rowId: `ai-${idx}-${c.outdoor_model}-${c.unit_mix || ""}`,
+  return candidates.map((c, i) => {
 
-    // existing table columns
-    Model: c.outdoor_model,
-    Type: c.type || (distribution === "ductless" ? "Non-ducted" : "Ducted"),
-    "Indoor Capacity": null,                 // keep blank if not available
-    "Total Capacity": c.total_capacity ?? null,
-    Units: c.unit_mix || "",
+    const mapping = Array.isArray(c.mapping) ? c.mapping : [];
 
-    // reuse your columns to show useful “fit” info
-    worst_margin: c.delta_btu ?? null,       // you can rename later
-    margin_total: c.delta_btu ?? null,
+    const { worst_margin, margin_total } =
+      computeMarginsFromMapping(mapping);
 
-    // keep full payload for Details
-    __aiCandidate: c,
-    __aiMeta: {
-      system_name: draft?.system_name,
-      distribution: draft?.distribution,
-      indoor_head_count: draft?.indoor_head_count,
-      margin_pct: draft?.margin_pct,
-      required_heat_btu_hr: draft?.required_heat_btu_hr,
-      selected_room_labels: draft?.selected_room_labels,
-      selected_rooms: draft?.selected_rooms,
-      room_load_lookup: draft?.room_load_lookup,
-    },
-  }));
+    return {
+
+      _rowId: `ai-${i}-${c.outdoor_model}-${c.unit_mix || ""}`,
+
+      // existing table columns
+      Model: c.outdoor_model ?? "",
+      Type: c.type || (distribution === "ductless" ? "Non-ducted" : "Ducted"),
+      "Indoor Capacity": c.indoor_capacity ?? null,             // keep blank if not available
+      "Total Capacity": c.total_capacity ?? null,
+      Units: c.unit_mix || "",
+      mapping,
+
+      // reuse your columns to show useful “fit” info
+      worst_margin,
+      margin_total,
+
+      // keep full payload for Details
+      __aiCandidate: c,
+      __aiMeta: {
+        system_name: draft?.system_name,
+        distribution: draft?.distribution,
+        indoor_head_count: draft?.indoor_head_count,
+        margin_pct: draft?.margin_pct,
+        required_heat_btu_hr: draft?.required_heat_btu_hr,
+        selected_room_labels: draft?.selected_room_labels,
+        selected_rooms: draft?.selected_rooms,
+        room_load_lookup: draft?.room_load_lookup,
+      },
+    };
+  });
 }
 
 // ---- 3) Build Details textarea text when an AI row is selected
