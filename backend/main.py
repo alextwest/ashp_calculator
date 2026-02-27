@@ -2,7 +2,7 @@ import traceback
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi import Request
 from pathlib import Path
 from fastapi import HTTPException
@@ -42,6 +42,11 @@ app.add_middleware(
 )
 
 print("hello from request", flush=True)
+
+
+@app.get("/")
+def home():
+    return RedirectResponse("/docs")
 
 @app.get("/api/_debug/routes")
 def debug_routes():
