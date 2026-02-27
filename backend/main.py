@@ -25,8 +25,8 @@ logging.info("🔄 load_combos called")
 
 ## Defining paths for static mounting at the end
 DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
-STATIC_DIR = DIST_DIR / "static"
 INDEX_HTML = DIST_DIR / "index.html"
+ASSETS_DIR = DIST_DIR / "assets"
 
 app = FastAPI()
 app.include_router(api_router)
@@ -289,25 +289,20 @@ def ai_catalog():
     return build_room_catalog(loads)   # items + whole_unit_option
 
 # Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
-if STATIC_DIR.exists() and INDEX_HTML.exists():
-    # React static assets
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+if ASSETS_DIR.exists() and INDEX_HTML.exists():
+    # Vite assets live in /assets
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
-    # Serve the SPA entry
     @app.get("/")
     def spa_index():
         return FileResponse(INDEX_HTML)
 
-    # SPA fallback for client-side routing, but never for /api/*
     @app.get("/{full_path:path}")
     def spa_fallback(full_path: str, request: Request):
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="Not Found")
         return FileResponse(INDEX_HTML)
 else:
-    # If frontend isn't built/deployed, at least make / not 405
-    from fastapi.responses import RedirectResponse
-
     @app.get("/")
     def home():
         return RedirectResponse("/docs")
