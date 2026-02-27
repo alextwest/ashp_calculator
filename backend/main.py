@@ -57,6 +57,17 @@ def debug_routes():
         out.append({"path": path, "methods": methods})
     return out
 
+@app.get("/api/_debug/frontend")
+def debug_frontend():
+    dist = Path(__file__).resolve().parent / "frontend_dist"
+    return {
+        "dist_exists": dist.exists(),
+        "dist_contents": sorted([p.name for p in dist.iterdir()]) if dist.exists() else [],
+        "static_exists": (dist / "static").exists(),
+        "assets_exists": (dist / "assets").exists(),
+        "index_exists": (dist / "index.html").exists(),
+    }
+
 @app.options("/{rest_of_path:path}")
 def options_passthrough(rest_of_path: str, request: Request):
     # If you ever see this hit, you know OPTIONS is reaching FastAPI.
