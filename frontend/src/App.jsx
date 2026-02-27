@@ -147,7 +147,7 @@ export default function App() {
 
       setResults(aiRows);
       setSelectedRow(null);
-      setDetailsText("");
+      //setDetailsText("");
     } catch (e) {
       setAiError(e.message || String(e));
     } finally {
@@ -171,6 +171,11 @@ export default function App() {
     console.log("📝 computing detailsText, selectedRow =", selectedRow);
 
     if (!selectedRow) return "";
+
+    // ✅ AI row details
+    if (selectedRow.__aiCandidate) {
+      return buildAiDetailsText(selectedRow);
+    }
 
     const r = selectedRow;
     const model = r.Model ?? "";
@@ -858,11 +863,11 @@ export default function App() {
                         console.log("🟦 Row clicked:", r);
                         setSelectedRow(r);
 
-                        if (r.__aiCandidate) {
-                          setDetailsText(buildAiDetailsText(r));
-                        } else {
-                          setDetailsText(existingDetailsTextForRow(r)); // whatever you already do
-                        }
+                        // if (r.__aiCandidate) {
+                        //   setDetailsText(buildAiDetailsText(r));
+                        // } else {
+                        //   setDetailsText(existingDetailsTextForRow(r)); // whatever you already do
+                        // }
 
                       }}
                     >
