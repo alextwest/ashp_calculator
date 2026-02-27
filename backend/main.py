@@ -261,6 +261,8 @@ def ai_recommend(req: RecommendReq):
             user_text=req.user_text,
             model=model_name,
         )
+
+        print(f"Detected variables for AI recommendation:\nIntent: {intent}\nBuilding Summary: {building_summary}")
         rec = recommend_from_intent(intent, building_summary)
         return {"intent": intent, "rec": rec}
 
@@ -272,6 +274,7 @@ def ai_recommend(req: RecommendReq):
 @app.get("/api/ai/catalog")
 def ai_catalog():
     loads = default_loads()
+    print("Generated room catalog from loads:", loads)
     return build_room_catalog(loads)   # items + whole_unit_option
 
 # Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
