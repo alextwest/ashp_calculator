@@ -247,15 +247,16 @@ export default function App() {
 
   // function to run AI agent
   async function runAi(textOverride) {
+    const text = (textOverride ?? aiUserText).trim();
+
     console.log("Room Catalog for AI agent:", roomCatalog);
     console.log("selectedIds:", selectedIds);
-    console.log("🤖 Running AI agent with user text:", aiUserText);
+    console.log("🤖 Running AI agent with user text:", text);
+
     if (!roomCatalog) {
       setAiError("Room catalog not loaded yet.");
-      return;
+      return null; // IMPORTANT: return something
     }
-    
-    const text = (textOverride ?? aiUserText).trim();
 
     try {
       setAiLoading(true);
@@ -263,8 +264,8 @@ export default function App() {
 
       const payload = await aiRecommend({
         user_text: text,
-        selected_ids: selectedIds,     // IMPORTANT
-        // intent_model: "gpt-5.2",     // optional; omit unless you want it
+        selected_ids: selectedIds,
+        // intent_model: "gpt-5.2",
       });
 
       const draft = payload?.rec?.drafts?.[0];
@@ -272,9 +273,11 @@ export default function App() {
 
       setResults(aiRows);
       setSelectedRow(null);
-      //setDetailsText("");
+
+      return payload; // ✅ lets AiChatPanel show questions
     } catch (e) {
       setAiError(e.message || String(e));
+      throw e; // ✅ so AiChatPanel can also show an "Error:" message if you want
     } finally {
       setAiLoading(false);
     }
