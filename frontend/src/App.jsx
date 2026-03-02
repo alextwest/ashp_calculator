@@ -146,35 +146,38 @@ function ResultsSection({
           </thead>
 
           <tbody>
-            {sortedResults.map((r, i) => (
-              <tr
-                key={r._rowId}
-                style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
-                onClick={() => {
-                  console.log("🟦 Row clicked:", r);
-                  setSelectedRow(r);
+            {sortedResults.map((r, i) => {
+              console.log("🟦 Rendering row:", r)
+              return (
+                <tr
+                  key={r._rowId}
+                  style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
+                  onClick={() => {
+                    console.log("🟦 Row clicked:", r);
+                    setSelectedRow(r);
 
-                  // if (r.__aiCandidate) {
-                  //   setDetailsText(buildAiDetailsText(r));
-                  // } else {
-                  //   setDetailsText(existingDetailsTextForRow(r)); // whatever you already do
-                  // }
+                    // if (r.__aiCandidate) {
+                    //   setDetailsText(buildAiDetailsText(r));
+                    // } else {
+                    //   setDetailsText(existingDetailsTextForRow(r)); // whatever you already do
+                    // }
 
-                }}
-              >
-                <td style={styles.td}>{r.Model}</td>
-                <td style={styles.td}>{r.Type}</td>
-                <td style={styles.tdCenter}>
-                  {r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}
-                </td>
-                <td style={styles.tdCenter}>
-                  {r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}
-                </td>
-                <td style={styles.tdCenter}>{r.Units}</td>
-                <td style={styles.tdCenter}>{Number(r.worst_margin).toFixed(0)}</td>
-                <td style={styles.tdCenter}>{Number(r.margin_total).toFixed(0)}</td>
-              </tr>
-            ))}
+                  }}
+                >
+                  <td style={styles.td}>{r.Model}</td>
+                  <td style={styles.td}>{r.Type}</td>
+                  <td style={styles.tdCenter}>
+                    {r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}
+                  </td>
+                  <td style={styles.tdCenter}>
+                    {r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}
+                  </td>
+                  <td style={styles.tdCenter}>{r.Units}</td>
+                  <td style={styles.tdCenter}>{Number(r.worst_margin).toFixed(0)}</td>
+                  <td style={styles.tdCenter}>{Number(r.margin_total).toFixed(0)}</td>
+                </tr>
+              )
+            })}
 
             {/* Empty state should use sortedResults, not results */}
             {sortedResults.length === 0 && (
@@ -268,8 +271,12 @@ export default function App() {
         // intent_model: "gpt-5.2",
       });
 
+      console.log("🤖 AI RAW PAYLOAD:", payload);
+
       const draft = payload?.rec?.drafts?.[0];
+      console.log("📦 AI DRAFT:", draft);
       const aiRows = candidatesToRows(draft);
+      console.log("📊 AI ROWS GENERATED:", aiRows);
 
       setResults(aiRows);
       setSelectedRow(null);
