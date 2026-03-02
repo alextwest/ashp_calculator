@@ -75,7 +75,7 @@ function ResultsSection({
   sortKey, setSortKey, sortColumns, sortDir, setSortDir,
   searchQuery, setSearchQuery,
   sortedResults, results, selectedRow, setSelectedRow,
-  styles={styles}
+  styles
 }) {
   return (
     <>
@@ -913,6 +913,7 @@ export default function App() {
                 results={results}
                 selectedRow={selectedRow}
                 setSelectedRow={setSelectedRow}
+                styles={styles}
               />
             </div>
 
