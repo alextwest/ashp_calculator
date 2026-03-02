@@ -94,7 +94,7 @@ export default function AiChatPanel({
       <div style={{ fontWeight: 500, marginBottom: 8 }}>AI Assistant</div>
 
       {/* Selection */}
-      <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 10, marginBottom: 10 }}>
+      {/* <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 10, marginBottom: 10 }}>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>Scope Location</div>
 
         <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
@@ -133,7 +133,7 @@ export default function AiChatPanel({
             Room list not loaded yet. You can still run “whole unit”.
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Transcript */}
       <div
