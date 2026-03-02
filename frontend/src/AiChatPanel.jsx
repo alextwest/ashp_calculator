@@ -91,11 +91,11 @@ export default function AiChatPanel({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "60vh" }}>
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>AI Assistant</div>
+      <div style={{ fontWeight: 500, marginBottom: 8 }}>AI Assistant</div>
 
       {/* Selection */}
       <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 10, marginBottom: 10 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Scope</div>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>Scope Location</div>
 
         <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
           <input
@@ -142,7 +142,7 @@ export default function AiChatPanel({
           overflowY: "auto",
           border: "1px solid #ddd",
           borderRadius: 10,
-          padding: 10,
+          //padding: 10,
           background: "white",
         }}
       >
@@ -150,14 +150,14 @@ export default function AiChatPanel({
           <div
             key={idx}
             style={{
-              marginBottom: 10,
+              //marginBottom: 10,
               display: "flex",
               justifyContent: m.role === "user" ? "flex-end" : "flex-start",
             }}
           >
             <div
               style={{
-                maxWidth: "85%",
+                maxWidth: "40%",
                 whiteSpace: "pre-wrap",
                 padding: "8px 10px",
                 borderRadius: 12,
