@@ -452,6 +452,14 @@ def recommend_from_intent(intent: dict, building_summary: dict) -> dict:
 
         elif t == "zone_all":
             zone_name = scope.get("zone_name")
+
+            print("AI RECOMMEND - loads keys:", list((scope or {}).keys()))
+            zones = (scope or {}).get("zones") or []
+            print("AI RECOMMEND - zones_count:", len(zones))
+            print("AI RECOMMEND - zone_names:", [z.get("zone_name") for z in zones][:20])
+            print("AI RECOMMEND - requested zone_name:", zone_name)
+
+
             if not zone_name or zone_name not in rooms_by_zone:
                 warnings.append(f"Unknown zone_name '{zone_name}'. Available: {zone_names}")
             else:
