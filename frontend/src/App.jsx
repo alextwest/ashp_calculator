@@ -75,7 +75,7 @@ function ResultsSection({
   sortKey, setSortKey, sortColumns, sortDir, setSortDir,
   searchQuery, setSearchQuery,
   sortedResults, results, selectedRow, setSelectedRow,
-  styles
+  styles={styles}
 }) {
   return (
     <>
