@@ -207,7 +207,7 @@ export default function AiChatPanel({
             cursor: aiLoading ? "default" : "pointer",
           }}
         >
-          {aiLoading ? "…" : "Send"}
+          {aiLoading ? "Thinking…" : "Send"}
         </button>
       </div>
     </div>
