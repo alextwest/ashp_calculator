@@ -932,11 +932,7 @@ export default function App() {
                 roomCatalog={roomCatalog}
                 selectedIds={selectedIds}
                 setSelectedIds={setSelectedIds}
-                onSend={async (text) => {
-                  // reuse your existing runAi logic but parameterized
-                  // IMPORTANT: make runAi accept optional text, or just inline it here
-                  return await runAi(text);
-                }}
+                onSend={runAi}
               />
             </div>
           </section>
