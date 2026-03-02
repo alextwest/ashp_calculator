@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 // import for AI agent helpers
 import { aiRecommend, candidatesToRows, buildAiDetailsText } from "./aiAgent";
+import AiChatPanel from "./AiChatPanel";
 
 const MANUFACTURERS = ["Fujitsu", "LG"];
 
@@ -69,6 +70,128 @@ function compareUnitsCombo(aUnits, bUnits, dir) {
   return 0;
 }
 
+function ResultsSection({
+  aiUserText, setAiUserText, aiLoading, aiError, runAi,
+  sortKey, setSortKey, sortColumns, sortDir, setSortDir,
+  searchQuery, setSearchQuery,
+  sortedResults, results, selectedRow, setSelectedRow,
+  styles
+}) {
+  return (
+    <>
+      {/* Sticky header */}
+      <div style={styles.resultsStickyHeader}>
+        <div style={styles.sectionTitle}>Results</div>
+
+          <div style={styles.resultsControls}>
+            <label>
+              Sort by{" "}
+              <select
+                value={sortKey}
+                style={styles.input}
+                onChange={(e) => {
+                  console.log("🔽 Sort column changed:", e.target.value);
+                  setSortKey(e.target.value);
+                }}
+              >
+                {sortColumns.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="button"
+              style={styles.btn}
+              onClick={() => {
+                setSortDir((d) => {
+                  const next = d === "asc" ? "desc" : "asc";
+                  console.log("🔁 Sort direction toggled:", d, "→", next);
+                  return next;
+                });
+              }}
+            >
+              {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
+            </button>
+
+            <label style={{ display: "block", marginBottom: 6 }}>
+              Search model: 
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  console.log("🔤 Search input changed:", e.target.value);
+                  setSearchQuery(e.target.value);
+                }}
+                placeholder="Search model… e.g. AOUH30KUAS1"
+                style={{ ...styles.input, width: 240, marginLeft: 8 }}
+              />
+            </label>
+
+          </div>
+        </div>
+
+        {/* Table content */}
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Model</th>
+              <th style={styles.th}>Type</th>
+              <th style={styles.th}>Indoor Capacity</th>
+              <th style={styles.th}>Total Capacity</th>
+              <th style={styles.th}>Units</th>
+              <th style={styles.th}>Worst Margin</th>
+              <th style={styles.th}>Total Oversize</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {sortedResults.map((r, i) => (
+              <tr
+                key={r._rowId}
+                style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
+                onClick={() => {
+                  console.log("🟦 Row clicked:", r);
+                  setSelectedRow(r);
+
+                  // if (r.__aiCandidate) {
+                  //   setDetailsText(buildAiDetailsText(r));
+                  // } else {
+                  //   setDetailsText(existingDetailsTextForRow(r)); // whatever you already do
+                  // }
+
+                }}
+              >
+                <td style={styles.td}>{r.Model}</td>
+                <td style={styles.td}>{r.Type}</td>
+                <td style={styles.tdCenter}>
+                  {r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}
+                </td>
+                <td style={styles.tdCenter}>
+                  {r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}
+                </td>
+                <td style={styles.tdCenter}>{r.Units}</td>
+                <td style={styles.tdCenter}>{Number(r.worst_margin).toFixed(0)}</td>
+                <td style={styles.tdCenter}>{Number(r.margin_total).toFixed(0)}</td>
+              </tr>
+            ))}
+
+            {/* Empty state should use sortedResults, not results */}
+            {sortedResults.length === 0 && (
+              <tr>
+                <td style={styles.td} colSpan={7}>
+                  {results.length === 0
+                    ? "No results yet."
+                    : "No matches for your search."}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+    </>
+  );
+}
+
 export default function App() {
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("Fujitsu");
@@ -123,7 +246,7 @@ export default function App() {
   }, []);
 
   // function to run AI agent
-  async function runAi() {
+  async function runAi(textOverride) {
     console.log("Room Catalog for AI agent:", roomCatalog);
     console.log("selectedIds:", selectedIds);
     console.log("🤖 Running AI agent with user text:", aiUserText);
@@ -132,12 +255,14 @@ export default function App() {
       return;
     }
     
+    const text = (textOverride ?? aiUserText).trim();
+
     try {
       setAiLoading(true);
       setAiError("");
 
       const payload = await aiRecommend({
-        user_text: aiUserText,
+        user_text: text,
         selected_ids: selectedIds,     // IMPORTANT
         // intent_model: "gpt-5.2",     // optional; omit unless you want it
       });
@@ -763,140 +888,53 @@ export default function App() {
           </form>
         </section>
 
-        {/* RESULTS + DETAILS (mimics treeview + details textbox) */}
+        {/* AI + RESULTS + DETAILS (mimics treeview + details textbox) */}
         <div className="rightSide">
           <section className="results">
-            <div style={{ ...styles.section, flex: 2, overflow: "auto", maxHeight: "60vh" }}>
-              {/* Sticky header */}
-              <div style={styles.resultsStickyHeader}>
-                <div style={styles.sectionTitle}>Results</div>
+            {/* LEFT — Results (60%) */}
+            <div style={{ ...styles.section, flex: "0 0 60%", minWidth: 0, maxHeight: "60vh" }}>
+              <ResultsSection
+                aiUserText={aiUserText}
+                setAiUserText={setAiUserText}
+                aiLoading={aiLoading}
+                aiError={aiError}
+                runAi={runAi}
+                sortKey={sortKey}
+                setSortKey={setSortKey}
+                sortColumns={sortColumns}
+                sortDir={sortDir}
+                setSortDir={setSortDir}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                sortedResults={sortedResults}
+                results={results}
+                selectedRow={selectedRow}
+                setSelectedRow={setSelectedRow}
+              />
+            </div>
 
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input
-                    type="text"
-                    value={aiUserText}
-                    onChange={(e) => setAiUserText(e.target.value)}
-                    placeholder="AI request: e.g. 2nd floor, 3 heads, no hallway"
-                    style={{ ...styles.input, width: 360 }}
-                  />
-                  <button
-                    type="button"
-                    style={styles.btn}
-                    disabled={aiLoading || !aiUserText.trim()}
-                    onClick={runAi}
-                  >
-                    {aiLoading ? "Thinking…" : "AI Recommend"}
-                  </button>
-                </div>
-
-                {aiError ? <div style={{ color: "crimson", marginTop: 6 }}>{aiError}</div> : null}
-                <br></br>
-
-                <div style={styles.resultsControls}>
-                  <label>
-                    Sort by{" "}
-                    <select
-                      value={sortKey}
-                      style={styles.input}
-                      onChange={(e) => {
-                        console.log("🔽 Sort column changed:", e.target.value);
-                        setSortKey(e.target.value);
-                      }}
-                    >
-                      {sortColumns.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <button
-                    type="button"
-                    style={styles.btn}
-                    onClick={() => {
-                      setSortDir((d) => {
-                        const next = d === "asc" ? "desc" : "asc";
-                        console.log("🔁 Sort direction toggled:", d, "→", next);
-                        return next;
-                      });
-                    }}
-                  >
-                    {sortDir === "asc" ? "Ascending ▲" : "Descending ▼"}
-                  </button>
-
-                  <label style={{ display: "block", marginBottom: 6 }}>
-                    Search model: 
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        console.log("🔤 Search input changed:", e.target.value);
-                        setSearchQuery(e.target.value);
-                      }}
-                      placeholder="Search model… e.g. AOUH30KUAS1"
-                      style={{ ...styles.input, width: 240, marginLeft: 8 }}
-                    />
-                  </label>
-
-                </div>
-              </div>
-
-              {/* Table content */}
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Model</th>
-                    <th style={styles.th}>Type</th>
-                    <th style={styles.th}>Indoor Capacity</th>
-                    <th style={styles.th}>Total Capacity</th>
-                    <th style={styles.th}>Units</th>
-                    <th style={styles.th}>Worst Margin</th>
-                    <th style={styles.th}>Total Oversize</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {sortedResults.map((r, i) => (
-                    <tr
-                      key={r._rowId}
-                      style={selectedRow && r._rowId === selectedRow._rowId ? styles.selectedRow : null}
-                      onClick={() => {
-                        console.log("🟦 Row clicked:", r);
-                        setSelectedRow(r);
-
-                        // if (r.__aiCandidate) {
-                        //   setDetailsText(buildAiDetailsText(r));
-                        // } else {
-                        //   setDetailsText(existingDetailsTextForRow(r)); // whatever you already do
-                        // }
-
-                      }}
-                    >
-                      <td style={styles.td}>{r.Model}</td>
-                      <td style={styles.td}>{r.Type}</td>
-                      <td style={styles.tdCenter}>
-                        {r["Indoor Capacity"] == null ? "" : Number(r["Indoor Capacity"]).toFixed(0)}
-                      </td>
-                      <td style={styles.tdCenter}>
-                        {r["Total Capacity"] == null ? "" : Number(r["Total Capacity"]).toFixed(0)}
-                      </td>
-                      <td style={styles.tdCenter}>{r.Units}</td>
-                      <td style={styles.tdCenter}>{Number(r.worst_margin).toFixed(0)}</td>
-                      <td style={styles.tdCenter}>{Number(r.margin_total).toFixed(0)}</td>
-                    </tr>
-                  ))}
-
-                  {/* Empty state should use sortedResults, not results */}
-                  {sortedResults.length === 0 && (
-                    <tr>
-                      <td style={styles.td} colSpan={7}>
-                        {results.length === 0
-                          ? "No results yet."
-                          : "No matches for your search."}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            {/* RIGHT — AI Panel (40%) */}
+            <div style={{
+              flex: "0 0 40%",
+              borderLeft: "1px solid #ddd",
+              paddingLeft: 16,
+              display: "flex",
+              flexDirection: "column",
+            }}>
+              <AiChatPanel
+                aiUserText={aiUserText}
+                setAiUserText={setAiUserText}
+                aiLoading={aiLoading}
+                aiError={aiError}
+                roomCatalog={roomCatalog}
+                selectedIds={selectedIds}
+                setSelectedIds={setSelectedIds}
+                onSend={async (text) => {
+                  // reuse your existing runAi logic but parameterized
+                  // IMPORTANT: make runAi accept optional text, or just inline it here
+                  return await runAi(text);
+                }}
+              />
             </div>
           </section>
           
