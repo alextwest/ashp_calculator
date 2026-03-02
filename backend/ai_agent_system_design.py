@@ -136,7 +136,7 @@ def build_building_summary(loads_json: Dict[str, Any]) -> Dict[str, Any]:
         zones_out.append({
             "zone_name": zone_name,
             "heating_btu_hr": zone_heat,
-            "room_names": [r.get("room_name") for r in zone_rooms if r.get("room_name")],
+            "room_names": [z.get("room_name") for r in zone_rooms if z.get("room_name")],
         })
 
         for r in zone_rooms:
