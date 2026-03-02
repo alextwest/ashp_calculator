@@ -577,7 +577,7 @@ export default function App() {
   // layout styles (simple, clean)
   const styles = {
     page: {
-      maxWidth: 1800,
+      //maxWidth: 1800,
       margin: "0 auto",
       padding: "12px",
       fontFamily: "Segoe UI, Arial, sans-serif",
