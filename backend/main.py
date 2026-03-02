@@ -15,6 +15,8 @@ from api.routes import router as api_router
 
 import logging, sys
 
+from ashp_calculator_logic import run_logic
+
 logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
@@ -242,6 +244,47 @@ def normalize_intent_model(m: str | None) -> str:
         return "gpt-5.2"
     return m
 
+def reqs_from_loads(loads: dict, selected_ids: list[str] | None, head_count: int) -> tuple[list[float], float]:
+    """
+    Returns (reqs, required_total).
+    - If selected_ids includes 'whole_unit' or is empty -> split whole-unit heat evenly across head_count
+    - Else -> reqs are the selected rooms' heating loads
+    """
+    selected_ids = selected_ids or ["whole_unit"]
+    head_count = max(int(head_count or 1), 1)
+
+    # Whole unit
+    if "whole_unit" in selected_ids:
+        total = (loads.get("whole_unit") or {}).get("heating_btu_hr")
+        total = float(total) if total is not None else 0.0
+        per = total / head_count
+        return [per] * head_count, total
+
+    # Rooms
+    room_map = {}
+    for z in (loads.get("zones") or []):
+        zn = z.get("zone_name") or "Zone"
+        for r in (z.get("rooms") or []):
+            rn = r.get("room_name") or "Room"
+            rid = f"{zn}::{rn}"
+            room_map[rid] = float(r.get("heating_btu_hr") or 0)
+
+    reqs = []
+    total = 0.0
+    for rid in selected_ids:
+        heat = room_map.get(rid, 0.0)
+        if heat > 0:
+            reqs.append(heat)
+            total += heat
+
+    # Fallback if user selected nothing valid
+    if not reqs:
+        total2 = float((loads.get("whole_unit") or {}).get("heating_btu_hr") or 0.0)
+        per = total2 / head_count
+        return [per] * head_count, total2
+
+    return reqs, total
+
 # adding in logic for AI agent to recommend ASHP system design
 class RecommendReq(BaseModel):
     user_text: str
@@ -252,30 +295,51 @@ class RecommendReq(BaseModel):
 def ai_recommend(req: RecommendReq):
 
     try:
-        # normalize selection values from UI
-        selected = req.selected_ids or ["whole_unit"]
-        selected = ["WHOLE" if s in ("whole_unit", "WHOLE") else s for s in selected]
-
-        # loads stub (or real loads later)
         loads = default_loads()
 
-        # build building_summary for your intent + deterministic logic
         building_summary = {
             "loads": loads,
-            "text": "stub building summary",
-            "selected_ids": selected,
+            "text": "",
         }
 
-        model_name = normalize_intent_model(req.intent_model)
         intent = get_intent(
             building_summary=building_summary,
             user_text=req.user_text,
-            model=model_name,
+            model=normalize_intent_model(req.intent_model),
         )
 
-        print(f"Detected variables for AI recommendation:\nIntent: {intent}\nBuilding Summary: {building_summary}")
         rec = recommend_from_intent(intent, building_summary)
+
+        # ✅ Enrich each draft by calling the SAME deterministic engine as /api/run
+        for d in rec.get("drafts", []):
+            head_count = d.get("indoor_head_count") or 1
+            distribution = d.get("distribution") or "ductless"
+            type_filter = "Non-ducted" if distribution == "ductless" else "Ducted"
+
+            selected_ids = req.selected_ids or ["whole_unit"]
+            reqs, required_total = reqs_from_loads(loads, selected_ids, head_count=head_count)
+
+            d["required_heat_btu_hr"] = required_total
+            d["reqs"] = reqs
+
+            # manufacturer default for now (or take from intent)
+            manufacturer = "Fujitsu"
+
+            engine = run_logic(
+                manufacturer=manufacturer,
+                reqs=reqs,
+                type_filter=type_filter,
+                max_results=300,
+            )
+
+            # IMPORTANT: use the deterministic engine rows as candidates
+            d["candidates"] = engine.get("results", [])
+
         return {"intent": intent, "rec": rec}
+
+        # print(f"Detected variables for AI recommendation:\nIntent: {intent}\nBuilding Summary: {building_summary}")
+        # rec = recommend_from_intent(intent, building_summary)
+        # return {"intent": intent, "rec": rec}
 
     except Exception as e:
         print("AI RECOMMEND ERROR:", repr(e))

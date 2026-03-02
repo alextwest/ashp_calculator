@@ -50,7 +50,7 @@ export function candidatesToRows(draft) {
       // existing table columns
       Model: c.outdoor_model ?? "",
       Type: c.type || (distribution === "ductless" ? "Non-ducted" : "Ducted"),
-      "Indoor Capacity": c.indoor_capacity ?? null,             // keep blank if not available
+      "Indoor Capacity": c.indoor_capacity ?? c.indoorCap ?? null,             // keep blank if not available
       "Total Capacity": c.total_capacity ?? null,
       Units: c.unit_mix || "",
       mapping,
@@ -110,7 +110,7 @@ export function buildAiDetailsText(row) {
   if (c.btu_0f != null) lines.push(`BTU @0F: ${Number(c.btu_0f).toFixed(0)}`);
   if (c.total_capacity != null) lines.push(`Total: ${Number(c.total_capacity).toFixed(0)}`);
   lines.push("");
-  
+
   if (c.breaker_req != null) lines.push(`Breaker: ${Number(c.breaker_req).toFixed(0)}A`);
   if (c.op_watts_htg != null) lines.push(`OpWatts(Htg): ${Number(c.op_watts_htg).toFixed(0)}`);
   lines.push(`SEER2: ${c.seer2 ?? ""}  EER2: ${c.eer2 ?? ""}  HSPF2: ${c.hspf2 ?? ""}`);
