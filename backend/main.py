@@ -302,6 +302,8 @@ def ai_recommend(req: RecommendReq):
             "text": "",
         }
 
+        print("AI RECOMMEND - building summary:", building_summary)
+
         intent = get_intent(
             building_summary=building_summary,
             user_text=req.user_text,
