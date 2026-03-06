@@ -7,6 +7,10 @@ import threading
 import time
 import re
 
+import logging
+
+logger = logging.getLogger("ashp.logic")
+
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "assets" / "data"
 
@@ -112,6 +116,35 @@ def detect_unit_columns(df: pd.DataFrame):
     cap_cols  = [c for _, c in paired]
     return unit_cols, cap_cols
 
+def log_df_signature(manufacturer: str, path: Path, df: pd.DataFrame, context: str = "load"):
+    """
+    Logs a consistent signature so App Insights proves:
+    - which Excel file was used
+    - sheet name
+    - file mtime/size
+    - df shape + key columns
+    """
+    try:
+        st = path.stat()
+        mtime_s = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(st.st_mtime))
+        logger.info(
+            "[%s] %s excel=%s sheet=%s size=%s mtime=%s rows=%s cols=%s",
+            context, manufacturer, str(path), SHEET_NAME, st.st_size, mtime_s, df.shape[0], df.shape[1]
+        )
+    except Exception:
+        logger.exception("[%s] Could not stat excel path for %s: %s", context, manufacturer, str(path))
+
+    # sanity checks
+    required_base = {"Model", "Type", "Indoor Capacity", "Total Capacity"}
+    missing_base = sorted(required_base - set(df.columns))
+    if missing_base:
+        logger.warning("[%s] %s missing base columns: %s", context, manufacturer, missing_base)
+
+    if "Model" in df.columns:
+        logger.info("[%s] %s unique models=%s", context, manufacturer, df["Model"].nunique())
+    if "Type" in df.columns:
+        types = sorted(set(df["Type"].fillna("").astype(str).str.strip()))
+        logger.info("[%s] %s types=%s", context, manufacturer, [t for t in types if t])
 
 def load_combos(manufacturer: str) -> pd.DataFrame:
     if manufacturer not in MANUFACTURER_FILES:
@@ -122,6 +155,9 @@ def load_combos(manufacturer: str) -> pd.DataFrame:
         raise FileNotFoundError(f"Excel file not found: {path}")
 
     df = pd.read_excel(path, sheet_name=SHEET_NAME)
+    df = df.copy()
+    df.attrs["source_path"] = str(path)
+    log_df_signature(manufacturer, path, df, context="load_combos")
 
     unit_cols, cap_cols = detect_unit_columns(df)
 

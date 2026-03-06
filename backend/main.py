@@ -1,53 +1,100 @@
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+import logging
+import sys
+import os
 from pathlib import Path
 
-# for ai agent 
-from pydantic import BaseModel
-from ai_agent_system_design import get_intent, recommend_from_intent
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.routes import router as api_router
 
-import logging, sys
-
+# -----------------------------------------------------------------------------
+# Logging (stdout -> picked up by App Service + can flow to App Insights)
+# -----------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("ashp-backend")
+
+
+# -----------------------------------------------------------------------------
+# App
+# -----------------------------------------------------------------------------
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-logging.info("🔄 load_combos called")
+# IMPORTANT: routers do NOT include "/api" internally in this cleaned setup.
+app.include_router(api_router, prefix="/api", tags=["api"])
 
-app = FastAPI()
-app.include_router(api_router)
+ENABLE_AI = os.getenv("ENABLE_AI", "0").lower() in ("1", "true", "yes")
 
-print("hello from request", flush=True)
+if ENABLE_AI:
+    try:
+        from api.ai_routes import router as ai_router
+        app.include_router(ai_router, prefix="/api", tags=["ai"])
+        logging.getLogger("ashp").info("✅ AI routes enabled")
+    except Exception:
+        logging.getLogger("ashp").exception("❌ Failed to enable AI routes")
+else:
+    logging.getLogger("ashp").info("ℹ️ AI routes disabled")
 
-# --- Serve React build (after CI builds frontend) ---
-# We will copy the built frontend into: backend/frontend_dist/
+# -----------------------------------------------------------------------------
+# Debug helpers
+# -----------------------------------------------------------------------------
+@app.get("/api/_debug/routes")
+def debug_routes():
+    out = []
+    for r in app.routes:
+        methods = sorted(getattr(r, "methods", []) or [])
+        path = getattr(r, "path", "")
+        out.append({"path": path, "methods": methods})
+    return out
+
+
+@app.options("/{rest_of_path:path}")
+def options_passthrough(rest_of_path: str, request: Request):
+    return {}
+
+
+# -----------------------------------------------------------------------------
+# Optional: serve SPA build (frontend_dist) if present
+# -----------------------------------------------------------------------------
 DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
+INDEX_HTML = DIST_DIR / "index.html"
+ASSETS_DIR = DIST_DIR / "assets"
 
-if DIST_DIR.exists():
-    app.mount("/", StaticFiles(directory=DIST_DIR, html=True), name="static")
+if ASSETS_DIR.exists() and INDEX_HTML.exists():
+    logger.info("✅ Serving frontend_dist SPA")
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
-    # SPA fallback (React Router safe)
+    @app.get("/")
+    def spa_index():
+        return FileResponse(INDEX_HTML)
+
     @app.get("/{full_path:path}")
-    def spa_fallback(full_path: str):
-        return FileResponse(DIST_DIR / "index.html")
+    def spa_fallback(full_path: str, request: Request):
+        # don't swallow API routes
+        if full_path.startswith("api/"):
+            return RedirectResponse("/docs")
+        return FileResponse(INDEX_HTML)
+else:
+    logger.info("ℹ️ frontend_dist not found; API-only mode")
 
-# adding in logic for AI agent to recommend ASHP system design
-class RecommendReq(BaseModel):
-    building_summary: dict
-    user_text: str
-    intent_model: str | None = None
-
-@app.post("/api/ai/recommend")
-def ai_recommend(req: RecommendReq):
-    intent = get_intent(
-        building_summary=req.building_summary,
-        user_text=req.user_text,
-        model=req.intent_model or "gpt-5.2",
-    )
-    rec = recommend_from_intent(intent, req.building_summary)
-    return {"intent": intent, "rec": rec}
+    @app.get("/")
+    def home():
+        return RedirectResponse("/docs")
+    
+@app.get("/api/_debug/features")
+def debug_features():
+    return {"enable_ai": ENABLE_AI}
