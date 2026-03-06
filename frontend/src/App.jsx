@@ -920,41 +920,57 @@ export default function App() {
           </form>
         </section>
 
-        {/* AI + RESULTS + DETAILS (mimics treeview + details textbox) */}
-        <div className="rightSide">
-          <section className="results">
-            {/* LEFT — Results (60%) */}
-            <div style={{ ...styles.section, flex: 3, minWidth: 0, maxHeight: "60vh" }}>
-              <ResultsSection
-                aiUserText={aiUserText}
-                setAiUserText={setAiUserText}
-                aiLoading={aiLoading}
-                aiError={aiError}
-                runAi={runAi}
-                sortKey={sortKey}
-                setSortKey={setSortKey}
-                sortColumns={sortColumns}
-                sortDir={sortDir}
-                setSortDir={setSortDir}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                sortedResults={sortedResults}
-                results={results}
-                selectedRow={selectedRow}
-                setSelectedRow={setSelectedRow}
-                styles={styles}
-              />
-            </div>
-
-            {/* RIGHT — AI Panel (40%) */}
-            <div style={{
-              flex: 2,
+        {/* AI + RESULTS */}
+        <section
+          className="results"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) 380px",
+            gap: 16,
+            alignItems: "start",
+            width: "100%",
+            minWidth: 0,
+          }}
+        >
+          {/* LEFT — Results */}
+          <div
+            style={{
+              ...styles.section,
               minWidth: 0,
-              borderLeft: "1px solid #ddd",
-              paddingLeft: 16,
-              display: "flex",
-              flexDirection: "column",
-            }}>
+              overflowX: "auto",
+              boxSizing: "border-box",
+              maxHeight: "60vh",
+            }}
+          >
+            <ResultsSection
+              aiUserText={aiUserText}
+              setAiUserText={setAiUserText}
+              aiLoading={aiLoading}
+              aiError={aiError}
+              runAi={runAi}
+              sortKey={sortKey}
+              setSortKey={setSortKey}
+              sortColumns={sortColumns}
+              sortDir={sortDir}
+              setSortDir={setSortDir}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              sortedResults={sortedResults}
+              results={results}
+              selectedRow={selectedRow}
+              setSelectedRow={setSelectedRow}
+              styles={styles}
+            />
+          </div>
+
+          {/* RIGHT — AI */}
+          <div
+            style={{
+              ...styles.section,
+              minWidth: 0,
+              boxSizing: "border-box",
+            }}
+          >
             {ENABLE_AI ? (
               <AiChatPanel
                 aiUserText={aiUserText}
@@ -967,27 +983,23 @@ export default function App() {
                 onSend={runAi}
               />
             ) : (
-              <ComingSoonTab title="AI System Design" message="Coming soon." />
+              <ComingSoonTab title="AI System Design" message="This feature is coming soon." />
             )}
-            </div>
-            <div style={{ fontSize: 12 }}>
-              AI enabled: {String(import.meta.env.VITE_ENABLE_AI)}
-            </div>
-          </section>
+          </div>
+        </section>
           
-          <section className="details">
-            <div style={{ ...styles.section, flex: 1 }}>
-              <div style={styles.sectionTitle}>Details</div>
-              <textarea
-                style={styles.details}
-                rows={detailsRows}
-                value={detailsText}
-                readOnly
-                placeholder="Select a result row to see details."
-              />
-            </div>
-          </section>
-        </div>
+        <section className="details">
+          <div style={{ ...styles.section, flex: 1 }}>
+            <div style={styles.sectionTitle}>Details</div>
+            <textarea
+              style={styles.details}
+              rows={detailsRows}
+              value={detailsText}
+              readOnly
+              placeholder="Select a result row to see details."
+            />
+          </div>
+        </section>
       </div>
     </div>
   );

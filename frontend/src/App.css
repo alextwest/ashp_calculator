@@ -18,12 +18,12 @@ html, body, #root {
 }
 
 /* right side stacks by default */
-.rightSide{
+/* .rightSide{
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
-}
+} */
 
 /* wide: controls left, content right */
 @media (min-width: 1100px) {
@@ -51,25 +51,13 @@ html, body, #root {
 } */
 
 .results {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  min-width: 0;
-}
-
-.results > div {
-  min-width: 0;
-}
-
-.results {
-  overflow: hidden;
-}
-
-.results .tableBox,
-.results table {
   width: 100%;
+  min-width: 0;
 }
 
-.results > div:first-child {
-  overflow-x: auto;
+@media (max-width: 1000px) {
+  .results {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
 }
