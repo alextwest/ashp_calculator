@@ -214,6 +214,7 @@ function ResultsSection({
 export default function App() {
   // making sure ai portion doesnt show on prod until ready
   const ENABLE_AI = import.meta.env.VITE_ENABLE_AI === "true";
+  console.log("VITE_ENABLE_AI =", import.meta.env.VITE_ENABLE_AI);
 
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("Fujitsu");
@@ -966,6 +967,9 @@ export default function App() {
             ) : (
               <ComingSoonTab title="AI System Design" message="Coming soon." />
             )}
+            </div>
+            <div style={{ fontSize: 12 }}>
+              AI enabled: {String(import.meta.env.VITE_ENABLE_AI)}
             </div>
           </section>
           

@@ -60,3 +60,16 @@ html, body, #root {
 .results > div {
   min-width: 0;
 }
+
+.results {
+  overflow: hidden;
+}
+
+.results .tableBox,
+.results table {
+  width: 100%;
+}
+
+.results > div:first-child {
+  overflow-x: auto;
+}
