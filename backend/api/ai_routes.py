@@ -3,6 +3,7 @@ import traceback
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from pathlib import Path
 
 from ai_agent_system_design import get_intent, recommend_from_intent
 from ashp_calculator_logic import run_logic
@@ -135,6 +136,11 @@ def build_room_catalog(loads: dict) -> dict:
         "whole_unit_option": {"id": "WHOLE", "label": "Entire Unit"},
     }
 
+@router.get("/ai/catalog")
+def ai_catalog():
+    loads = default_loads()
+    print("Generated room catalog from loads:", loads)
+    return build_room_catalog(loads)
 
 def filter_loads_by_selection(loads: dict, selected_ids: list[str]) -> dict:
     if not selected_ids or "WHOLE" in selected_ids:
