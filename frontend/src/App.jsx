@@ -6,6 +6,22 @@ import AiChatPanel from "./AiChatPanel";
 
 const MANUFACTURERS = ["Fujitsu", "LG"];
 
+// just used for Ai dev vs prod environment
+function ComingSoonTab() {
+  return (
+    <div style={{
+      padding: "40px",
+      textAlign: "center",
+      borderRadius: "12px",
+      background: "#f5f5f5",
+      marginTop: "20px"
+    }}>
+      <h2>AI System Design</h2>
+      <p>This feature is coming soon.</p>
+    </div>
+  );
+}
+
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
@@ -196,6 +212,9 @@ function ResultsSection({
 }
 
 export default function App() {
+  // making sure ai portion doesnt show on prod until ready
+  const ENABLE_AI = import.meta.env.VITE_ENABLE_AI === "true";
+
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("Fujitsu");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -932,6 +951,7 @@ export default function App() {
               display: "flex",
               flexDirection: "column",
             }}>
+            {ENABLE_AI ? (
               <AiChatPanel
                 aiUserText={aiUserText}
                 setAiUserText={setAiUserText}
@@ -942,6 +962,9 @@ export default function App() {
                 setSelectedIds={setSelectedIds}
                 onSend={runAi}
               />
+            ) : (
+              <ComingSoonTab title="AI System Design" message="Coming soon." />
+            )}
             </div>
           </section>
           
