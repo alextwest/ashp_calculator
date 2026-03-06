@@ -213,7 +213,9 @@ function ResultsSection({
 
 export default function App() {
   // making sure ai portion doesnt show on prod until ready
-  const ENABLE_AI = import.meta.env.VITE_ENABLE_AI === "true";
+  const ENABLE_AI =
+    import.meta.env.VITE_ENABLE_AI === "true" ||
+    import.meta.env.DEV;
   console.log("VITE_ENABLE_AI =", import.meta.env.VITE_ENABLE_AI);
 
   // --- top bar state ---

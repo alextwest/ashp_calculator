@@ -31,6 +31,8 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
+        env:
+          VITE_ENABLE_AI: ${{ github.ref == 'refs/heads/dev' && 'true' || 'false' }}
         run: npm run build
 
       - name: Copy frontend build into backend/frontend_dist
