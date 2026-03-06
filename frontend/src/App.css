@@ -6,6 +6,10 @@
   text-align: left;
 }
 
+html, body, #root {
+  width: 100%;
+}
+
 /* vertical-first */
 .appShell {
   display: flex;
@@ -37,11 +41,22 @@
 }
 
 /* extra wide: results + details side-by-side */
-@media (min-width: 1300px){
+/* @media (min-width: 1300px){
   .rightSide{
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 10px;
     align-items: start;
   }
+} */
+
+.results {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.results > div {
+  min-width: 0;
 }

@@ -921,7 +921,7 @@ export default function App() {
         <div className="rightSide">
           <section className="results">
             {/* LEFT — Results (60%) */}
-            <div style={{ ...styles.section, flex: "0 0 60%", minWidth: 0, maxHeight: "60vh" }}>
+            <div style={{ ...styles.section, flex: 3, minWidth: 0, maxHeight: "60vh" }}>
               <ResultsSection
                 aiUserText={aiUserText}
                 setAiUserText={setAiUserText}
@@ -945,7 +945,8 @@ export default function App() {
 
             {/* RIGHT — AI Panel (40%) */}
             <div style={{
-              flex: "0 0 40%",
+              flex: 2,
+              minWidth: 0,
               borderLeft: "1px solid #ddd",
               paddingLeft: 16,
               display: "flex",
