@@ -925,7 +925,7 @@ export default function App() {
           className="results"
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(260px, 320px)",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(260px, 32%)",
             gap: 16,
             alignItems: "start",
             width: "100%",
