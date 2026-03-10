@@ -288,6 +288,8 @@ def ai_recommend(req: RecommendReq):
 
             print(f"Enriched draft with deterministic engine results:\nIntent: {intent}\nDraft: {d}")
 
+            print(">>> HIT /api/ai/recommend <<<")
+
         return {"intent": intent, "rec": rec}
 
         # print(f"Detected variables for AI recommendation:\nIntent: {intent}\nBuilding Summary: {building_summary}")
