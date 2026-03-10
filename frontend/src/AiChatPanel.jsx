@@ -53,18 +53,20 @@ export default function AiChatPanel({
     setSelectedIds(arr.length ? arr : ["whole_unit"]);
   };
 
+  // make sure the backend sees the full chat transcript for an ai recommendation
   const send = async () => {
     const text = (aiUserText || "").trim();
     if (!text || aiLoading) return;
 
-    // Update transcript
-    setMessages((m) => [...m, { role: "user", content: text }]);
+    const userMsg = { role: "user", content: text };
+    const updatedMessages = [...messages, userMsg];
+
+    setMessages(updatedMessages);
     setAiUserText("");
 
     try {
-      const payload = await onSend(text);
+      const payload = await onSend(text, updatedMessages);
 
-      // If your backend returns intent.questions, show them as assistant messages
       const questions = payload?.intent?.questions || [];
       if (questions.length) {
         setMessages((m) => [
