@@ -1,9 +1,10 @@
 import logging
 import traceback
 import math
+from typing_extensions import Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pathlib import Path
 
 from ai_agent_system_design import get_intent, recommend_from_intent
@@ -236,10 +237,35 @@ def reqs_from_loads(loads: dict, selected_ids: list[str] | None, head_count: int
     return reqs, total
 
 # adding in logic for AI agent to recommend ASHP system design
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
 class RecommendReq(BaseModel):
     user_text: str
-    selected_ids: list[str] = ["whole_unit"]
+    selected_ids: list[str] = Field(default_factory=lambda: ["whole_unit"])
     intent_model: str | None = None
+    chat_history: list[ChatTurn] = Field(default_factory=list)
+
+def build_intent_transcript(chat_history: list[ChatTurn], latest_user_text: str) -> str:
+    parts: list[str] = []
+
+    for msg in chat_history:
+        text = (msg.content or "").strip()
+        if not text:
+            continue
+
+        if msg.role == "user":
+            parts.append(f"User: {text}")
+        else:
+            parts.append(f"Assistant: {text}")
+
+    latest = (latest_user_text or "").strip()
+    if latest:
+        if not parts or parts[-1] != f"User: {latest}":
+            parts.append(f"User: {latest}")
+
+    return "\n".join(parts)
 
 @router.post("/ai/recommend")
 def ai_recommend(req: RecommendReq):
@@ -252,11 +278,12 @@ def ai_recommend(req: RecommendReq):
             "text": "",
         }
 
+        transcript = build_intent_transcript(req.chat_history, req.user_text)
         print("AI RECOMMEND - building summary:", building_summary)
 
         intent = get_intent(
             building_summary=building_summary,
-            user_text=req.user_text,
+            user_text=transcript,
             model=normalize_intent_model(req.intent_model),
         )
 

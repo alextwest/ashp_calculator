@@ -246,6 +246,7 @@ export default function App() {
 
   // setting variables for AI agent integration
   const [aiUserText, setAiUserText] = useState("");
+  const [messages, setMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
@@ -271,12 +272,13 @@ export default function App() {
   }, []);
 
   // function to run AI agent
-  async function runAi(textOverride) {
+  async function runAi(textOverride, messages = []) {
     const text = (textOverride ?? aiUserText).trim();
 
     console.log("Room Catalog for AI agent:", roomCatalog);
     console.log("selectedIds:", selectedIds);
     console.log("🤖 Running AI agent with user text:", text);
+    console.log("🤖 Full AI chat history:", messages);
 
     if (!roomCatalog) {
       setAiError("Room catalog not loaded yet.");
@@ -290,6 +292,10 @@ export default function App() {
       const payload = await aiRecommend({
         user_text: text,
         selected_ids: selectedIds,
+        chat_history: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
         // intent_model: "gpt-5.2",
       });
 
