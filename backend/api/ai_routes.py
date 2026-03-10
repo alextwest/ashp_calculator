@@ -1,5 +1,6 @@
 import logging
 import traceback
+import math
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -268,10 +269,15 @@ def ai_recommend(req: RecommendReq):
             type_filter = "Non-ducted" if distribution == "ductless" else "Ducted"
 
             selected_ids = req.selected_ids or ["whole_unit"]
+
             reqs, required_total = reqs_from_loads(loads, selected_ids, head_count=head_count)
+            reqs = [math.ceil(r / 1000) * 1000 for r in reqs]
+            required_total = sum(reqs)
 
             d["required_heat_btu_hr"] = required_total
             d["reqs"] = reqs
+
+            print("AI NORMALIZED REQS:", reqs, "TOTAL:", required_total)
 
             # manufacturer default for now (or take from intent)
             manufacturer = "Fujitsu"
@@ -282,6 +288,9 @@ def ai_recommend(req: RecommendReq):
                 type_filter=type_filter,
                 max_results=300,
             )
+
+            print("ENGINE RESULT COUNT:", len(engine.get("results", [])))
+            print("ENGINE RESULTS SAMPLE:", engine.get("results", [])[:3])
 
             # IMPORTANT: use the deterministic engine rows as candidates
             d["candidates"] = engine.get("results", [])
