@@ -297,19 +297,8 @@ export default function App() {
 
       const draft = payload?.rec?.drafts?.[0];
       console.log("📦 AI DRAFT:", draft);
-      if (!draft) return;
 
-      const computedCandidates = runDeterministicSelection({
-        distribution: draft.distribution,
-        indoor_head_count: draft.indoor_head_count,
-        reqs: draft.reqs,
-        margin_pct: draft.margin_pct,
-        manufacturer,
-      });
-
-      console.log("🧮 COMPUTED CANDIDATES:", computedCandidates);
-
-      const aiRows = candidatesToRows(computedCandidates);
+      const aiRows = draft?.candidates || [];
       console.log("📊 AI ROWS GENERATED:", aiRows);
 
       setResults(aiRows);
