@@ -142,7 +142,7 @@ export default function AiChatPanel({
           overflowY: "auto",
           border: "1px solid #ddd",
           borderRadius: 10,
-          //padding: 10,
+          padding: 10,
           background: "white",
         }}
       >
