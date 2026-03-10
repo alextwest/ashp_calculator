@@ -302,22 +302,3 @@ def ai_catalog():
     loads = default_loads()
     print("Generated room catalog from loads:", loads)
     return build_room_catalog(loads)   # items + whole_unit_option
-
-# Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
-if ASSETS_DIR.exists() and INDEX_HTML.exists():
-    # Vite assets live in /assets
-    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
-
-    @router.get("/")
-    def spa_index():
-        return FileResponse(INDEX_HTML)
-
-    @router.get("/{full_path:path}")
-    def spa_fallback(full_path: str, request: Request):
-        if full_path.startswith("api/"):
-            raise HTTPException(status_code=404, detail="Not Found")
-        return FileResponse(INDEX_HTML)
-else:
-    @router.get("/")
-    def home():
-        return RedirectResponse("/docs")
