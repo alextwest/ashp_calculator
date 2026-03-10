@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from pathlib import Path
 
-from ai_agent_system_design import get_intent, recommend_from_intent
+from ai_agent_system_design import get_intent, recommend_from_intent, build_building_summary
 from ashp_calculator_logic import run_logic
 
 logger = logging.getLogger("ashp.ai")
@@ -273,10 +273,7 @@ def ai_recommend(req: RecommendReq):
     try:
         loads = default_loads()
 
-        building_summary = {
-            "loads": loads,
-            "text": "",
-        }
+        building_summary = build_building_summary(loads)
 
         transcript = build_intent_transcript(req.chat_history, req.user_text)
         print("AI RECOMMEND - building summary:", building_summary)
@@ -295,18 +292,35 @@ def ai_recommend(req: RecommendReq):
             distribution = d.get("distribution") or "ductless"
             type_filter = "Non-ducted" if distribution == "ductless" else "Ducted"
 
-            selected_ids = req.selected_ids or ["whole_unit"]
+            selected_rooms = d.get("selected_rooms") or []
+            room_load_lookup = d.get("room_load_lookup") or {}
+            margin_pct = float(d.get("margin_pct") or 0.15)
 
-            reqs, required_total = reqs_from_loads(loads, selected_ids, head_count=head_count)
-            reqs = [math.ceil(r / 1000) * 1000 for r in reqs]
-            required_total = sum(reqs)
+            # Build reqs from AI-selected rooms if available
+            if selected_rooms:
+                room_loads = []
+                for zone_name, room_name in selected_rooms:
+                    btu = room_load_lookup.get((zone_name, room_name))
+                    if isinstance(btu, (int, float)):
+                        room_loads.append(float(btu) * (1 + margin_pct))
+
+                # sort biggest-to-smallest and round up
+                room_loads = sorted(room_loads, reverse=True)
+
+                # if user asked for more heads than selected rooms, keep only available room loads
+                reqs = [math.ceil(r / 1000) * 1000 for r in room_loads[:head_count]]
+
+                required_total = sum(reqs)
+            else:
+                # fallback only if no room scope could be resolved
+                selected_ids = req.selected_ids or ["whole_unit"]
+                reqs, required_total = reqs_from_loads(loads, selected_ids, head_count=head_count)
+                reqs = [math.ceil(r / 1000) * 1000 for r in reqs]
+                required_total = sum(reqs)
 
             d["required_heat_btu_hr"] = required_total
             d["reqs"] = reqs
 
-            print("AI NORMALIZED REQS:", reqs, "TOTAL:", required_total)
-
-            # manufacturer default for now (or take from intent)
             manufacturer = "Fujitsu"
 
             engine = run_logic(
@@ -316,10 +330,6 @@ def ai_recommend(req: RecommendReq):
                 max_results=300,
             )
 
-            print("ENGINE RESULT COUNT:", len(engine.get("results", [])))
-            print("ENGINE RESULTS SAMPLE:", engine.get("results", [])[:3])
-
-            # IMPORTANT: use the deterministic engine rows as candidates
             d["candidates"] = engine.get("results", [])
 
             print(f"Enriched draft with deterministic engine results:\nIntent: {intent}\nDraft: {d}")
