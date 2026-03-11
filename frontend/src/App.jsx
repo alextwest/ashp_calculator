@@ -309,7 +309,13 @@ export default function App() {
       const draft = payload?.rec?.drafts?.[0];
       console.log("📦 AI DRAFT:", draft);
 
-      const aiRows = draft?.candidates || [];
+      // need to make sure aiRows has __aiCandidate set to build AI specific details pane for user
+      const aiRows = (draft?.candidates || []).map((c, i) => ({
+        ...c,
+        __aiCandidate: c,   // 👈 flag that this row came from AI
+        __aiMeta: payload?.rec || {}, // optional but useful later
+        _rowId: `ai-${i}-${c.outdoor_model || c.Model || "row"}`
+      }));
       console.log("📊 AI ROWS GENERATED:", aiRows);
 
       setResults(aiRows);
@@ -343,8 +349,10 @@ export default function App() {
 
     // ✅ AI row details
     if (selectedRow.__aiCandidate) {
+      console.log("🧾 Building AI details text for AI row:", selectedRow.__aiCandidate);
       return buildAiDetailsText(selectedRow);
     }
+    
 
     const r = selectedRow;
     const model = r.Model ?? "";

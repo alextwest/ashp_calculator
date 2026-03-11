@@ -315,7 +315,8 @@ def ai_recommend(req: RecommendReq):
                 room_loads = sorted(room_loads, reverse=True)
 
                 # if user asked for more heads than selected rooms, keep only available room loads
-                reqs = [math.ceil(r / 1000) * 1000 for r in room_loads[:head_count]]
+                #reqs = [math.ceil(r / 1000) * 1000 for r in room_loads[:head_count]]
+                reqs = [round(r) for r in room_loads[:head_count]]
 
                 required_total = sum(reqs)
             else:
