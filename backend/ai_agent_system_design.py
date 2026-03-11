@@ -441,8 +441,24 @@ def get_intent(building_summary: dict, user_text: str, model: str) -> dict:
     )
     return json.loads(resp.output_text)
 
+def extract_named_rooms_from_transcript(user_text: str, zone_name: str, building_summary: dict) -> list[str]:
+    zone_rooms = [
+        r.get("room_name")
+        for r in building_summary.get("rooms", [])
+        if r.get("zone_name") == zone_name and r.get("room_name")
+    ]
+
+    text = (user_text or "").lower()
+    matched = []
+
+    for room in zone_rooms:
+        if room and room.lower() in text:
+            matched.append(room)
+
+    return matched
+
 # clarify with user what rooms they intend for indoor heads to be placed
-def post_validate_intent(intent: dict, building_summary: dict) -> dict:
+def post_validate_intent(intent: dict, building_summary: dict, transcript: str) -> dict:
     rooms_by_zone = {}
     for r in building_summary.get("rooms", []) or []:
         zn = r.get("zone_name")
@@ -465,6 +481,16 @@ def post_validate_intent(intent: dict, building_summary: dict) -> dict:
             zone_rooms = rooms_by_zone.get(zone_name, [])
 
             if zone_name and head_count > 0 and len(zone_rooms) > head_count:
+                matched_rooms = extract_named_rooms_from_transcript(transcript, zone_name, building_summary)
+
+                if matched_rooms:
+                    sys["scope"] = {
+                        "type": "rooms",
+                        "zone_name": None,
+                        "room_names": matched_rooms,
+                    }
+                    continue
+
                 room_list = ", ".join(zone_rooms)
                 extra_questions.append(
                     f"The {zone_name} zone has {len(zone_rooms)} rooms: {room_list}. "

@@ -69,10 +69,17 @@ export default function AiChatPanel({
 
       const questions = payload?.intent?.questions || [];
       if (questions.length) {
-        setMessages((m) => [
-          ...m,
-          ...questions.map((q) => ({ role: "assistant", content: q })),
-        ]);
+        setMessages((m) => {
+          const existingAssistantTexts = new Set(
+            m.filter((msg) => msg.role === "assistant").map((msg) => msg.content)
+          );
+
+          const newQuestionMessages = questions
+            .filter((q) => !existingAssistantTexts.has(q))
+            .map((q) => ({ role: "assistant", content: q }));
+
+          return [...m, ...newQuestionMessages];
+        });
       } else {
         setMessages((m) => [...m, { role: "assistant", content: "Done. I updated results." }]);
       }
