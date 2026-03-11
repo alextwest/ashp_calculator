@@ -192,21 +192,33 @@ export function buildAiDetailsText(row) {
   }
 
   const mapping = Array.isArray(c.mapping) ? c.mapping : [];
+
   if (mapping.length) {
     lines.push("");
     lines.push("Head Assignment:");
+
     mapping.forEach((pair, i) => {
       const [req, cap] = Array.isArray(pair) ? pair : [];
-      const margin = typeof req === "number" && typeof cap === "number" ? cap - req : null;
+
+      const margin =
+        typeof req === "number" && typeof cap === "number"
+          ? cap - req
+          : null;
+
       const pct =
         typeof margin === "number" && typeof req === "number" && req > 0
           ? (margin / req) * 100
           : null;
 
+      const room = rooms[i] || "";
+
+      const roomLabel = room ? ` (${room.split("/").pop().trim()})` : "";
+
       lines.push(
         `  ${i + 1}. Req ${num(Number(req))} → Cap ${num(Number(cap))}` +
-          (margin != null ? ` | Margin ${num(margin)}` : "") +
-          (pct != null ? ` | ${pct.toFixed(1)}%` : "")
+        (margin != null ? ` | Margin ${num(margin)}` : "") +
+        (pct != null ? ` | ${pct.toFixed(1)}%` : "") +
+        roomLabel
       );
     });
   }
