@@ -341,7 +341,7 @@ def ai_recommend(req: RecommendReq):
             )
             
             print("ENGINE RAW RESULT:", engine)
-            print("ENGINE RESULT COUNT:", len(engine.get("results", [])))
+            logging.info("ENGINE RESULT COUNT: %s", len(engine.get("results", [])))
 
             d["candidates"] = engine.get("results", [])
 
