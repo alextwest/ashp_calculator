@@ -193,15 +193,17 @@ export function buildAiDetailsText(row) {
 
   const mapping = Array.isArray(c.mapping) ? c.mapping : [];
 
-  const roomRequests =
-    m?.room_requests ||
-    draft?.room_requests ||
-    intent?.room_requests ||
-    [];
+  // const roomRequests =
+  //   m?.room_requests ||
+  //   draft?.room_requests ||
+  //   intent?.room_requests ||
+  //   [];
 
-  const assignmentLabels = roomRequests.length
-    ? roomRequests.map(r => r.room_name || r.label || "")
-    : rooms;
+  // const assignmentLabels = roomRequests.length
+  //   ? roomRequests.map(r => r.room_name || r.label || "")
+  //   : rooms;
+
+  const useRoomLabels = Array.isArray(rooms) && rooms.length === mapping.length;
 
   if (mapping.length) {
     lines.push("");
@@ -222,9 +224,12 @@ export function buildAiDetailsText(row) {
 
       //const room = rooms[i] || "";
 
-      const roomLabel = assignmentLabels?.[i]
-        ? ` (${assignmentLabels[i].split("/").pop().trim()})`
+      const roomLabel = useRoomLabels && rooms?.[i]
+        ? ` (${rooms[i].split("/").pop().trim()})`
         : "";
+      //assignmentLabels?.[i]
+        //? ` (${assignmentLabels[i].split("/").pop().trim()})`
+        //: "";
 
       lines.push(
         `  ${i + 1}. Req ${num(Number(req))} → Cap ${num(Number(cap))}` +
