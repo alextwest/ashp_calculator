@@ -285,7 +285,7 @@ def ai_recommend(req: RecommendReq):
         )
 
         # confirm with user about room selection
-        intent = post_validate_intent(intent, building_summary)
+        intent = post_validate_intent(intent, building_summary, transcript)
 
         rec = recommend_from_intent(intent, building_summary)
 
