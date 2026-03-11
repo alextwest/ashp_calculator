@@ -541,7 +541,9 @@ def recommend_from_intent(intent: dict, building_summary: dict) -> dict:
             "selected_rooms": selected,                  # [(zone, room), ...]
             "selected_room_labels": selected_room_labels, # ["Zone / Room", ...]
 
-            "room_load_lookup": room_load,               # {(zone, room): btu}
+            "room_load_lookup": {
+                f"{zn}||{rn}": btu for (zn, rn), btu in room_load.items()
+            },               # {(zone, room): btu}
             "required_heat_btu_hr": required_btu,
             "candidates": cands,
         })
