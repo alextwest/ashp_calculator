@@ -286,6 +286,9 @@ def ai_recommend(req: RecommendReq):
 
         rec = recommend_from_intent(intent, building_summary)
 
+        print("REC AFTER recommend_from_intent:", rec)
+        print("REC WARNINGS:", rec.get("warnings", []))
+
         # ✅ Enrich each draft by calling the SAME deterministic engine as /api/run
         for d in rec.get("drafts", []):
             head_count = d.get("indoor_head_count") or 1
@@ -323,12 +326,22 @@ def ai_recommend(req: RecommendReq):
 
             manufacturer = "Fujitsu"
 
+            print("AI DRAFT BEFORE ENGINE:", d)
+            print("HEAD COUNT:", head_count)
+            print("DISTRIBUTION:", distribution)
+            print("TYPE FILTER:", type_filter)
+            print("REQS SENT TO ENGINE:", reqs)
+            print("REQUIRED TOTAL:", required_total)
+
             engine = run_logic(
                 manufacturer=manufacturer,
                 reqs=reqs,
                 type_filter=type_filter,
                 max_results=300,
             )
+            
+            print("ENGINE RAW RESULT:", engine)
+            print("ENGINE RESULT COUNT:", len(engine.get("results", [])))
 
             d["candidates"] = engine.get("results", [])
 

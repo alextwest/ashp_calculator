@@ -299,6 +299,11 @@ export default function App() {
         // intent_model: "gpt-5.2",
       });
 
+      console.log("AI payload intent:", payload?.intent);
+      console.log("AI payload rec:", payload?.rec);
+      console.log("AI draft warnings:", payload?.rec?.warnings);
+      console.log("AI draft candidates:", payload?.rec?.drafts?.[0]?.candidates);
+
       console.log("🤖 AI RAW PAYLOAD:", payload);
 
       const draft = payload?.rec?.drafts?.[0];

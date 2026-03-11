@@ -2,6 +2,7 @@
 
 // ---- 1) API call: summary + user text -> { intent, rec }
 export async function aiRecommend(body) {
+  console.log("Hitting /ai/recommend API")
   const resp = await fetch("/api/ai/recommend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
