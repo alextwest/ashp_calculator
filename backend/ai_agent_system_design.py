@@ -625,7 +625,7 @@ def format_rooms_with_loads(selected_rooms, room_load_lookup):
     grouped = defaultdict(list)
 
     for zone, room in selected_rooms:
-        load = room_load_lookup.get((zone, room))
+        load = room_load_lookup.get(f"{zone}||{room}")
         if isinstance(load, (int, float)):
             grouped[zone].append((room, load))
         else:
@@ -810,7 +810,7 @@ def interactive_loop(building_summary: dict, model_intent: str, out_path: Path):
                     room_loads = []
                     for zone_name, room_name in selected_rooms:
                         # you likely already have a dict like rooms_by_zone_loads
-                        load = room_load_lookup.get((zone_name, room_name))
+                        load = room_load_lookup.get(f"{zone_name}||{room_name}")
                         if load is not None:
                             room_loads.append({
                                 "room_name": f"{zone_name} / {room_name}",
