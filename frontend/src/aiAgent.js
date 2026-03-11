@@ -193,6 +193,16 @@ export function buildAiDetailsText(row) {
 
   const mapping = Array.isArray(c.mapping) ? c.mapping : [];
 
+  const roomRequests =
+    m?.room_requests ||
+    draft?.room_requests ||
+    intent?.room_requests ||
+    [];
+
+  const assignmentLabels = roomRequests.length
+    ? roomRequests.map(r => r.room_name || r.label || "")
+    : rooms;
+
   if (mapping.length) {
     lines.push("");
     lines.push("Head Assignment:");
@@ -210,9 +220,11 @@ export function buildAiDetailsText(row) {
           ? (margin / req) * 100
           : null;
 
-      const room = rooms[i] || "";
+      //const room = rooms[i] || "";
 
-      const roomLabel = room ? ` (${room.split("/").pop().trim()})` : "";
+      const roomLabel = assignmentLabels?.[i]
+        ? ` (${assignmentLabels[i].split("/").pop().trim()})`
+        : "";
 
       lines.push(
         `  ${i + 1}. Req ${num(Number(req))} → Cap ${num(Number(cap))}` +
