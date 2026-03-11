@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 // import for AI agent helpers
-import { aiRecommend, candidatesToRows, buildAiDetailsText } from "./aiAgent";
+import { aiRecommend, buildAiDetailsText } from "./aiAgent";
 import AiChatPanel from "./AiChatPanel";
 
 const MANUFACTURERS = ["Fujitsu", "LG"];

@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from pathlib import Path
 
-from ai_agent_system_design import get_intent, recommend_from_intent, build_building_summary
+from ai_agent_system_design import get_intent, recommend_from_intent, build_building_summary, post_validate_intent
 from ashp_calculator_logic import run_logic
 
 logger = logging.getLogger("ashp.ai")
@@ -283,6 +283,9 @@ def ai_recommend(req: RecommendReq):
             user_text=transcript,
             model=normalize_intent_model(req.intent_model),
         )
+
+        # confirm with user about room selection
+        intent = post_validate_intent(intent, building_summary)
 
         rec = recommend_from_intent(intent, building_summary)
 

@@ -417,6 +417,11 @@ def get_intent(building_summary: dict, user_text: str, model: str) -> dict:
                 "- For scope.type='rooms': set scope.room_names to existing room names and scope.zone_name to null.\n"
                 "- For scope.type='whole_building': set both scope.zone_name and scope.room_names to null.\n"
                 "- If scope.type='zone_all' and indoor_head_count equals the number of rooms in that zone, assume one head per room unless the user specifies otherwise.\n"
+                "\n"
+                "- For ductless systems, if scope.type='zone_all' and the selected zone contains more rooms than indoor_head_count, ask which rooms should be served unless the user already specified room names.\n"
+                "- If indoor_head_count is less than the number of rooms in a zone, do not assume all rooms are served by individual heads.\n"
+                "- In that case, return a clarification question asking which rooms or room groupings should be covered.\n"
+                "- For ductless systems, if a zone contains more rooms than the requested indoor_head_count, prefer asking which rooms should be served.\n"
             )},
             {"role": "user", "content": (
                 "building_summary:\n"
@@ -435,6 +440,42 @@ def get_intent(building_summary: dict, user_text: str, model: str) -> dict:
         },
     )
     return json.loads(resp.output_text)
+
+# clarify with user what rooms they intend for indoor heads to be placed
+def post_validate_intent(intent: dict, building_summary: dict) -> dict:
+    rooms_by_zone = {}
+    for r in building_summary.get("rooms", []) or []:
+        zn = r.get("zone_name")
+        rn = r.get("room_name")
+        if zn and rn:
+            rooms_by_zone.setdefault(zn, []).append(rn)
+
+    extra_questions = []
+
+    for sys in intent.get("systems", []) or []:
+        scope = sys.get("scope", {}) or {}
+        distribution = (sys.get("distribution") or "").strip().lower()
+        head_count = int(sys.get("indoor_head_count") or 0)
+
+        if distribution != "ductless":
+            continue
+
+        if scope.get("type") == "zone_all":
+            zone_name = scope.get("zone_name")
+            zone_rooms = rooms_by_zone.get(zone_name, [])
+
+            if zone_name and head_count > 0 and len(zone_rooms) > head_count:
+                room_list = ", ".join(zone_rooms)
+                extra_questions.append(
+                    f"The {zone_name} zone has {len(zone_rooms)} rooms: {room_list}. "
+                    f"You requested {head_count} ductless heads. Which rooms should the heads serve?"
+                )
+
+    if extra_questions:
+        intent["questions"] = extra_questions
+        intent["systems"] = []
+
+    return intent
 
 def recommend_from_intent(intent: dict, building_summary: dict) -> dict:
     # Index rooms by zone and name
