@@ -303,7 +303,8 @@ def ai_recommend(req: RecommendReq):
             if selected_rooms:
                 room_loads = []
                 for zone_name, room_name in selected_rooms:
-                    btu = room_load_lookup.get((zone_name, room_name))
+                    key = f"{zone_name}||{room_name}"
+                    btu = room_load_lookup.get(key)
                     if isinstance(btu, (int, float)):
                         room_loads.append(float(btu) * (1 + margin_pct))
 

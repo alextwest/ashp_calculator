@@ -251,7 +251,7 @@ export default function App() {
   const [aiError, setAiError] = useState("");
 
   const [roomCatalog, setRoomCatalog] = useState(null);
-  const [selectedIds, setSelectedIds] = useState(["whole_unit"]); // default
+  const [selectedIds, setSelectedIds] = useState([]); //(["whole_unit"]); // default
 
   useEffect(() => {
     console.log("Fetching AI catalog...");
