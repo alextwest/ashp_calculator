@@ -291,7 +291,7 @@ export default function App() {
 
       const payload = await aiRecommend({
         user_text: text,
-        selected_ids: selectedIds,
+        //selected_ids: selectedIds,
         chat_history: messages.map((m) => ({
           role: m.role,
           content: m.content,

@@ -243,7 +243,7 @@ class ChatTurn(BaseModel):
 
 class RecommendReq(BaseModel):
     user_text: str
-    selected_ids: list[str] = Field(default_factory=lambda: ["whole_unit"])
+    selected_ids: list[str] | None = None #= Field(default_factory=lambda: ["whole_unit"])
     intent_model: str | None = None
     chat_history: list[ChatTurn] = Field(default_factory=list)
 
