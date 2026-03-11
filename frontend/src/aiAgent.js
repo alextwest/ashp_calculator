@@ -8,6 +8,9 @@ export async function aiRecommend(body) {
     body: JSON.stringify(body),
   });
 
+  console.log("Body sent to AI recommend API:", body);
+  console.log("Raw response from AI recommend API:", resp);
+
   if (!resp.ok) {
     const txt = await resp.text();
     console.error("AI recommend failed:", resp.status, txt);
