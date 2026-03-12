@@ -386,15 +386,20 @@ export default function App() {
         loads: incomingLoad,
       }),
     })
-      .then(r => {
+      .then(async (r) => {
         console.log("Catalog response status:", r.status);
-        return r.json();
+        console.log("Catalog response content-type:", r.headers.get("content-type"));
+
+        const text = await r.text();
+        console.log("Catalog raw response:", text.slice(0, 500));
+
+        return JSON.parse(text);
       })
-      .then(data => {
+      .then((data) => {
         console.log("Catalog data:", data);
         setRoomCatalog(data);
       })
-      .catch(e => {
+      .catch((e) => {
         console.error("Catalog fetch error:", e);
         setAiError(e.message || String(e));
       });
