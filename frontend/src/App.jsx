@@ -377,7 +377,15 @@ export default function App() {
   useEffect(() => {
     console.log("Fetching AI catalog...");
 
-    fetch("/api/ai/catalog")
+    fetch("/api/ai/catalog", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        loads: incomingLoad,
+      }),
+    })
       .then(r => {
         console.log("Catalog response status:", r.status);
         return r.json();
