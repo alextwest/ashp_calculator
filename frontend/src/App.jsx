@@ -151,6 +151,7 @@ function ResultsSection({
         <table style={styles.table}>
           <thead>
             <tr>
+              <th style={styles.th}>Manufacturer</th>
               <th style={styles.th}>Model</th>
               <th style={styles.th}>Type</th>
               <th style={styles.th}>Indoor Capacity</th>
@@ -180,6 +181,7 @@ function ResultsSection({
 
                   }}
                 >
+                  <td style={styles.td}>{r.Manufacturer}</td>
                   <td style={styles.td}>{r.Model}</td>
                   <td style={styles.td}>{r.Type}</td>
                   <td style={styles.tdCenter}>
@@ -255,7 +257,7 @@ export default function App() {
   console.log("VITE_ENABLE_AI =", import.meta.env.VITE_ENABLE_AI);
 
   // --- top bar state ---
-  const [manufacturer, setManufacturer] = useState("Fujitsu");
+  const [manufacturer, setManufacturer] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [types, setTypes] = useState(["All"]);
 
@@ -490,6 +492,7 @@ export default function App() {
     
 
     const r = selectedRow;
+    const manufacturer = r.Manufacturer ?? "";
     const model = r.Model ?? "";
     const type = r.Type ?? "";
     const units = r.Units ?? "";
@@ -510,6 +513,7 @@ export default function App() {
     console.log("🧾 details of selected row data:", r)
 
     const lines = [
+      `Manufacturer: ${manufacturer}`,
       `Model: ${model}`,
       "Performance:",
       `  Op. Watts/Htg: ${fmt(op_watts)}`,
