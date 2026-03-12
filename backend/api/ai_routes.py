@@ -116,6 +116,15 @@ def default_loads():
 
     return loads
 
+def resolve_loads(loads: dict | None) -> dict:
+    """
+    Use generator-provided conduit loads when available.
+    Fall back to default stub only for local testing.
+    """
+    if isinstance(loads, dict) and loads:
+        return loads
+    return default_loads()
+
 def build_room_catalog(loads: dict) -> dict:
     items = []
     for z in loads.get("zones", []):
@@ -135,12 +144,15 @@ def build_room_catalog(loads: dict) -> dict:
         "catalog_version": "1.0",
         "scope": "rooms",
         "items": items,
-        "whole_unit_option": {"id": "WHOLE", "label": "Entire Unit"},
+        "whole_unit_option": {"id": "whole_unit", "label": "Entire Unit"},
     }
 
-@router.get("/ai/catalog")
-def ai_catalog():
-    loads = default_loads()
+class CatalogReq(BaseModel):
+    loads: dict | None = None
+
+@router.post("/ai/catalog")
+def ai_catalog(req: CatalogReq):
+    loads = resolve_loads(req.loads)
     print("Generated room catalog from loads:", loads)
     return build_room_catalog(loads)
 
@@ -246,6 +258,7 @@ class RecommendReq(BaseModel):
     selected_ids: list[str] | None = None #= Field(default_factory=lambda: ["whole_unit"])
     intent_model: str | None = None
     chat_history: list[ChatTurn] = Field(default_factory=list)
+    loads: dict | None = None
 
 def build_intent_transcript(chat_history: list[ChatTurn], latest_user_text: str) -> str:
     parts: list[str] = []
@@ -271,7 +284,7 @@ def build_intent_transcript(chat_history: list[ChatTurn], latest_user_text: str)
 def ai_recommend(req: RecommendReq):
 
     try:
-        loads = default_loads()
+        loads = resolve_loads(req.loads)
 
         building_summary = build_building_summary(loads)
 
@@ -364,9 +377,3 @@ def ai_recommend(req: RecommendReq):
         print("AI RECOMMEND ERROR:", repr(e))
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/ai/catalog")
-def ai_catalog():
-    loads = default_loads()
-    print("Generated room catalog from loads:", loads)
-    return build_room_catalog(loads)   # items + whole_unit_option

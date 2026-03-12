@@ -211,6 +211,42 @@ function ResultsSection({
   );
 }
 
+function buildCalculatorStateFromConduit(load) {
+  if (!load || typeof load !== "object") {
+    return null;
+  }
+
+  // adjust these fields to your real payload shape
+  const manufacturer = load.manufacturer || "Fujitsu";
+
+  // try several likely shapes for room/head loads
+  let rawReqs = [];
+
+  if (Array.isArray(load.reqs)) {
+    rawReqs = load.reqs;
+  } else if (Array.isArray(load.rooms)) {
+    rawReqs = load.rooms.map((r) =>
+      r?.heating_load_btuh ??
+      r?.heating_btuh ??
+      r?.load_btuh ??
+      r?.required_btuh ??
+      ""
+    );
+  } else if (Array.isArray(load.head_requirements)) {
+    rawReqs = load.head_requirements;
+  }
+
+  const reqs = rawReqs
+    .map((v) => String(v ?? "").trim())
+    .filter((v) => v !== "");
+
+  return {
+    manufacturer,
+    reqs,
+    roomCount: Math.max(1, reqs.length),
+  };
+}
+
 export default function App() {
   // making sure ai portion doesnt show on prod until ready
   const ENABLE_AI =
@@ -227,7 +263,7 @@ export default function App() {
   const [roomCount, setRoomCount] = useState(1);
 
   // --- dynamic room requirements ---
-  const [reqs, setReqs] = useState(["9000", "7000"]); // same default vibe as your GUI
+  const [reqs, setReqs] = useState(["9000"]); // same default vibe as your GUI
 
   // --- results ---
   const [loading, setLoading] = useState(false);
@@ -252,6 +288,91 @@ export default function App() {
 
   const [roomCatalog, setRoomCatalog] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]); //(["whole_unit"]); // default
+
+  // setting logic for fetching conduit data from generator upload
+  const [incomingLoad, setIncomingLoad] = useState(null);
+  const [loadImported, setLoadImported] = useState(false);
+
+  // IMPORTANT: origin strings do not end with "/"
+  const GENERATOR_ORIGIN =
+    import.meta.env.VITE_GENERATOR_ORIGIN ||
+    "https://wonderful-desert-0055d690f-staging.eastus2.1.azurestaticapps.net";
+
+  // tell parent iframe host that calculator is ready
+  useEffect(() => {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(
+        { type: "calculator_ready" },
+        GENERATOR_ORIGIN
+      );
+      console.log("📤 Sent calculator_ready to parent:", GENERATOR_ORIGIN);
+    }
+  }, [GENERATOR_ORIGIN]);
+
+  useEffect(() => {
+    if (!incomingLoad) return;
+
+    console.log("📦 Incoming conduit load:", incomingLoad);
+
+    const mapped = buildCalculatorStateFromConduit(incomingLoad);
+
+    if (!mapped) {
+      console.log("⚠️ Could not map incoming conduit load");
+      return;
+    }
+
+    console.log("🧭 Mapped conduit load for calculator:", mapped);
+
+    if (mapped.manufacturer) {
+      setManufacturer(mapped.manufacturer);
+    }
+
+    if (mapped.roomCount) {
+      setRoomCount(mapped.roomCount);
+    }
+
+    if (mapped.reqs?.length) {
+      setReqs(mapped.reqs);
+    }
+
+    setSelectedRow(null);
+    setResults([]);
+    setError("");
+    setLoadImported(true);
+  }, [incomingLoad]);
+
+  // receive conduit load from proposal generator
+  useEffect(() => {
+    function handleMessage(event) {
+      if (event.origin !== GENERATOR_ORIGIN) {
+        console.log("⛔ Ignoring message from unexpected origin:", event.origin);
+        return;
+      }
+
+      if (!event?.data) return;
+
+      console.log("📩 Calculator received message:", event.data);
+
+      if (event.data.type === "conduit_load") {
+        setIncomingLoad(event.data.payload || null);
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [GENERATOR_ORIGIN]);
+
+  useEffect(() => {
+    if (!loadImported) return;
+    if (!reqs.length) return;
+
+    const timer = setTimeout(() => {
+      runSolver();
+      setLoadImported(false);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [loadImported, reqs]);
 
   useEffect(() => {
     console.log("Fetching AI catalog...");
@@ -296,6 +417,7 @@ export default function App() {
           role: m.role,
           content: m.content,
         })),
+        loads: incomingLoad,
         // intent_model: "gpt-5.2",
       });
 
