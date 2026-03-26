@@ -219,7 +219,7 @@ function buildCalculatorStateFromConduit(load) {
   }
 
   // adjust these fields to your real payload shape
-  const manufacturer = load.manufacturer || "Fujitsu";
+  const manufacturer = load.manufacturer || "All";
 
   // try several likely shapes for room/head loads
   let rawReqs = [];

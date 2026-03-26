@@ -44,36 +44,17 @@ def meta(manufacturer: str = Query(...)):
     Used by frontend to populate Type dropdown, max heads, etc.
     """
     try:
-        logger.info(f"/meta called with manufacturer={manufacturer}")
-
         allowed = ["Fujitsu", "LG", "All"]
         if manufacturer not in allowed:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unknown manufacturer: {manufacturer}"
-            )
+            raise HTTPException(status_code=400, detail=f"Unknown manufacturer: {manufacturer}")
 
         manufacturers = ["Fujitsu", "LG"] if manufacturer == "All" else [manufacturer]
-        logger.info(f"Resolved manufacturers={manufacturers}")
 
-        dfs = []
-        for m in manufacturers:
-            logger.info(f"Loading combos for {m}")
-            df = get_combos_cached(m)
-            logger.info(f"{m} rows={len(df)} cols={list(df.columns)}")
-            dfs.append(df)
-
+        dfs = [get_combos_cached(m) for m in manufacturers]
         combined_df = pd.concat(dfs, ignore_index=True)
-        logger.info(f"Combined rows={len(combined_df)}")
 
-        types = sorted(
-            set(combined_df["Type"].fillna("").astype(str).str.strip())
-        )
-
-        max_heads = max(
-            (len(df.attrs.get("UNIT_COLS", [])) for df in dfs),
-            default=0
-        )
+        types = sorted(set(combined_df["Type"].fillna("").astype(str).str.strip()))
+        max_heads = max((len(df.attrs.get("UNIT_COLS", [])) for df in dfs), default=0)
 
         return {
             "ok": True,
@@ -87,7 +68,6 @@ def meta(manufacturer: str = Query(...)):
     except Exception as e:
         logger.exception("Error in /meta")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/_debug/df")
 def debug_df(
