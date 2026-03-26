@@ -44,10 +44,29 @@ def meta(manufacturer: str = Query(...)):
     Used by frontend to populate Type dropdown, max heads, etc.
     """
     try:
-        df = get_combos_cached(manufacturer)
+        if manufacturer == "All":
+            manufacturers = ["Fujitsu", "LG"]
+        else:
+            manufacturers = [manufacturer]
 
-        types = sorted(set(df["Type"].fillna("").astype(str).str.strip()))
-        max_heads = len(df.attrs.get("UNIT_COLS", []))
+        dfs = []
+        unit_cols_all = []
+
+        for m in manufacturers:
+            df = get_combos_cached(m)
+            dfs.append(df)
+            unit_cols_all.extend(df.attrs.get("UNIT_COLS", []))
+
+        combined_df = pd.concat(dfs, ignore_index=True)
+
+        types = sorted(
+            set(combined_df["Type"].fillna("").astype(str).str.strip())
+        )
+
+        max_heads = max(
+            (len(df.attrs.get("UNIT_COLS", [])) for df in dfs),
+            default=0
+        )
 
         return {
             "ok": True,
@@ -55,6 +74,7 @@ def meta(manufacturer: str = Query(...)):
             "max_heads": max_heads,
             "types": ["All"] + [t for t in types if t],
         }
+    
     except Exception as e:
         logger.exception("Error in /meta")
         raise HTTPException(status_code=500, detail=str(e))
