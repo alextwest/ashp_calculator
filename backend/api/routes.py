@@ -44,20 +44,27 @@ def meta(manufacturer: str = Query(...)):
     Used by frontend to populate Type dropdown, max heads, etc.
     """
     try:
-        if manufacturer == "All":
-            manufacturers = ["Fujitsu", "LG"]
-        else:
-            manufacturers = [manufacturer]
+        logger.info(f"/meta called with manufacturer={manufacturer}")
+
+        allowed = ["Fujitsu", "LG", "All"]
+        if manufacturer not in allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown manufacturer: {manufacturer}"
+            )
+
+        manufacturers = ["Fujitsu", "LG"] if manufacturer == "All" else [manufacturer]
+        logger.info(f"Resolved manufacturers={manufacturers}")
 
         dfs = []
-        unit_cols_all = []
-
         for m in manufacturers:
+            logger.info(f"Loading combos for {m}")
             df = get_combos_cached(m)
+            logger.info(f"{m} rows={len(df)} cols={list(df.columns)}")
             dfs.append(df)
-            unit_cols_all.extend(df.attrs.get("UNIT_COLS", []))
 
         combined_df = pd.concat(dfs, ignore_index=True)
+        logger.info(f"Combined rows={len(combined_df)}")
 
         types = sorted(
             set(combined_df["Type"].fillna("").astype(str).str.strip())
@@ -74,7 +81,9 @@ def meta(manufacturer: str = Query(...)):
             "max_heads": max_heads,
             "types": ["All"] + [t for t in types if t],
         }
-    
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error in /meta")
         raise HTTPException(status_code=500, detail=str(e))

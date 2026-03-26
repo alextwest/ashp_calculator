@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { aiRecommend, buildAiDetailsText } from "./aiAgent";
 import AiChatPanel from "./AiChatPanel";
 
-const MANUFACTURERS = ["Fujitsu", "LG"];
+const MANUFACTURERS = ["All", "Fujitsu", "LG"];
 
 // just used for Ai dev vs prod environment
 function ComingSoonTab() {
@@ -574,8 +574,14 @@ export default function App() {
     setSelectedRow(null);
 
     try {
+      console.log("manufacturer before fetch:", m);
+
       const res = await fetch(`/api/meta?manufacturer=${encodeURIComponent(m)}`);
       const data = await res.json();
+
+      console.log("meta response status:", res.status);
+      console.log("meta response data:", data);
+
       if (!res.ok) throw new Error(data?.detail || "Failed to load metadata");
 
       setTypes(data.types || ["All"]);
