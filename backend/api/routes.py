@@ -29,16 +29,18 @@ def run(req: RunRequest):
             req.manufacturer, req.type_filter, req.reqs
         )
 
-        allowed = ["Fujitsu", "LG", "All"]
-        if req.manufacturer not in allowed:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unknown manufacturer: {req.manufacturer}"
+        if req.manufacturer != "All":
+            result = run_logic(
+                manufacturer=req.manufacturer,
+                reqs=req.reqs,
+                type_filter=req.type_filter,
+                max_results=req.max_results,
             )
+            logger.info("run_logic result type=%s value=%s", type(result), result)
+            return {"ok": True, "result": result}
 
-        manufacturers = ["Fujitsu", "LG"] if req.manufacturer == "All" else [req.manufacturer]
-
-        combined_results = []
+        manufacturers = ["Fujitsu", "LG"]
+        all_results = []
 
         for m in manufacturers:
             result = run_logic(
@@ -47,30 +49,10 @@ def run(req: RunRequest):
                 type_filter=req.type_filter,
                 max_results=req.max_results,
             )
+            logger.info("run_logic result for %s type=%s value=%s", m, type(result), result)
 
-            if isinstance(result, list):
-                for row in result:
-                    row = dict(row)
-                    row["Manufacturer"] = m
-                    combined_results.append(row)
-            else:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Unexpected result format from run_logic for {m}"
-                )
+        return {"ok": True, "result": all_results}
 
-        combined_results = sorted(
-            combined_results,
-            key=lambda r: float(r.get("Total Oversize", float("inf")))
-        )
-
-        if req.max_results:
-            combined_results = combined_results[:req.max_results]
-
-        return {"ok": True, "result": combined_results}
-
-    except HTTPException:
-        raise
     except Exception as e:
         logger.exception("Error in /run")
         raise HTTPException(status_code=500, detail=str(e))
