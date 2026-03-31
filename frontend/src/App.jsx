@@ -366,6 +366,8 @@ export default function App() {
       }))
     ) || [];
 
+  console.log("🔍 Building room lookup from rooms:", rooms);
+
     return Object.fromEntries(
       rooms.map((room) => [
         room.room_id,
@@ -379,6 +381,7 @@ export default function App() {
   }, [incomingLoad]);
 
   useEffect(() => {
+    console.log("Head selections updated:", headSelections);
     setReqs(headSelections.map((h) => h.btu || ""));
   }, [headSelections, setReqs]);
 
