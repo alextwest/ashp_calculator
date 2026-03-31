@@ -220,21 +220,20 @@ function buildCalculatorStateFromConduit(load) {
 
   const manufacturer = "All";
 
-  const rooms = Array.isArray(load.zones)
+  const flatRooms = Array.isArray(load.zones)
     ? load.zones.flatMap((zone) =>
-        Array.isArray(zone.rooms) ? zone.rooms : []
+        (Array.isArray(zone.rooms) ? zone.rooms : []).map((room) => ({
+          ...room,
+          zone_name: zone.zone_name,
+          label: `${zone.zone_name} / ${room.room_name}`,
+        }))
       )
     : [];
 
-  const reqs = rooms
-    .map((room) => room?.heating_btu_hr)
-    .filter((v) => typeof v === "number" && !Number.isNaN(v))
-    .map((v) => String(Math.round(v)));
-
   return {
     manufacturer,
-    reqs,
-    roomCount: Math.max(1, reqs.length),
+    rooms: flatRooms,
+    wholeUnitHeating: load?.whole_unit?.heating_btu_hr ?? null,
   };
 }
 
@@ -320,13 +319,13 @@ export default function App() {
       setManufacturer(mapped.manufacturer);
     }
 
-    if (mapped.roomCount) {
-      setRoomCount(mapped.roomCount);
-    }
+    // if (mapped.roomCount) {
+    //   setRoomCount(mapped.roomCount);
+    // }
 
-    if (mapped.reqs?.length) {
-      setReqs(mapped.reqs);
-    }
+    // if (mapped.reqs?.length) {
+    //   setReqs(mapped.reqs);
+    // }
 
     setSelectedRow(null);
     setResults([]);
@@ -349,13 +348,12 @@ export default function App() {
 
   // allow room selection per head user adds
   useEffect(() => {
-    setHeadSelections((prev) => {
-      const next = Array.from({ length: roomCount }, (_, i) => ({
+    setHeadSelections((prev) =>
+      Array.from({ length: roomCount }, (_, i) => ({
         roomId: prev[i]?.roomId || "",
         btu: prev[i]?.btu || "",
-      }));
-      return next;
-    });
+      }))
+    );
   }, [roomCount]);
 
   const roomLookup = useMemo(() => {
