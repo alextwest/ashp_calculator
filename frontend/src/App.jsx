@@ -181,7 +181,7 @@ function ResultsSection({
 
                   }}
                 >
-                  <td style={styles.td}>{r.Manufacturer}</td>
+                  <td style={styles.td}>{r.Manufacturer || r.manufacturer || ""}</td>
                   <td style={styles.td}>{r.Model}</td>
                   <td style={styles.td}>{r.Type}</td>
                   <td style={styles.tdCenter}>
@@ -280,7 +280,7 @@ export default function App() {
   const [sortKey, setSortKey] = useState(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState("asc");
 
-  const sortColumns = ["Total Oversize", "Worst Margin", "Indoor Capacity", "Total Capacity", "Model", "Type", "Units"]; 
+  const sortColumns = ["Total Oversize", "Worst Margin", "Indoor Capacity", "Total Capacity", "Model", "Type", "Units", "Manufacturer"]; 
 
   // setting variables for AI agent integration
   const [aiUserText, setAiUserText] = useState("");
