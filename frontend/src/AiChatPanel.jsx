@@ -100,7 +100,7 @@ export default function AiChatPanel({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "60vh" }}>
-      <div style={{ fontWeight: 500, marginBottom: 8 }}>AI Assistant</div>
+      <div style={{ fontWeight: 500, marginBottom: 8 }}>AI Assistant (based on conduit upload)</div>
 
       {/* Selection */}
       {/* <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 10, marginBottom: 10 }}>
