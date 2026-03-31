@@ -933,7 +933,7 @@ export default function App() {
     // room requirement inputs
     roomsGrid: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, 120px)", //"repeat(auto-fit, minmax(100px, 1fr))", // i dont want to autofitting across the whole width
+      gridTemplateColumns: "repeat(auto-fill, 200px)", //"repeat(auto-fit, minmax(100px, 1fr))", // i dont want to autofitting across the whole width
       gap: 12,
       alignItems: "start",
     },
@@ -1143,32 +1143,20 @@ export default function App() {
                     flexDirection: "column",
                     gap: 6,
                     minWidth: 0,
+                    width: "100%",
                   }}
                 >
                   <div style={styles.reqLabelText}>Head {idx + 1}</div>
 
-                  <label style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                    <span style={styles.reqLabelText}>Room</span>
-                    <select
-                      style={{
-                        ...styles.input,
-                        width: "100%",
-                        boxSizing: "border-box",
-                        minWidth: 0,
-                      }}
-                      value={head.roomId}
-                      onChange={(e) => handleHeadRoomChange(idx, e.target.value)}
-                    >
-                      <option value="">Select room...</option>
-                      {getAvailableRoomsForHead(idx).map((room) => (
-                        <option key={room.id} value={room.id}>
-                          {room.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                      minWidth: 0,
+                      width: "100%",
+                    }}
+                  >
                     <span style={styles.reqLabelText}>Req {idx + 1}</span>
                     <input
                       style={{
@@ -1183,12 +1171,43 @@ export default function App() {
                       inputMode="numeric"
                     />
                   </label>
+
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                      minWidth: 0,
+                      width: "100%",
+                    }}
+                  >
+                    <span style={styles.reqLabelText}>Room</span>
+                    <select
+                      style={{
+                        ...styles.input,
+                        width: "100%",
+                        boxSizing: "border-box",
+                        minWidth: 0,
+                      }}
+                      value={head.roomId}
+                      onChange={(e) => handleHeadRoomChange(idx, e.target.value)}
+                    >
+                      <option value="">Choose a room</option>
+                      {getAvailableRoomsForHead(idx).map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {room.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               ))}
             </div>
 
             <div style={{ fontSize: 11, color: "#666" }}>
-              Select a room to auto-fill the BTU requirement, or type your own value. <br></br>Press Enter to find options.
+              Room selection will only show if a conduit file was uploaded in the proposal generator. 
+              <br></br>Select a room to auto-fill the BTU requirement, or type your own value.
+              <br></br>Press Enter to find options.
             </div>
           </form>
         </section>
