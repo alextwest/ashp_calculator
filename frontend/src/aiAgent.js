@@ -155,6 +155,7 @@ export function buildAiDetailsText(row) {
   }
 
   lines.push("Selected Candidate");
+  lines.push(`Manufacturer: ${val(c.manufacturer, c.Manufacturer)}`);
   lines.push(`Outdoor: ${val(c.outdoor_model, c.Model)}`);
   lines.push(`Type: ${val(c.type, c.Type)}`);
   lines.push(`Mix: ${val(c.unit_mix, c.Units)}`);
