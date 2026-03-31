@@ -457,6 +457,20 @@ def extract_named_rooms_from_transcript(user_text: str, zone_name: str, building
 
     return matched
 
+# function to recommend head placement based on rooms with largest loads
+def pick_top_rooms_by_load(zone_name: str, building_summary: dict, head_count: int) -> list[str]:
+    zone_rooms = [
+        r for r in building_summary.get("rooms", [])
+        if r.get("zone_name") == zone_name and r.get("room_name")
+    ]
+
+    zone_rooms.sort(
+        key=lambda r: float(r.get("heating_btu_hr") or 0),
+        reverse=True,
+    )
+
+    return [r["room_name"] for r in zone_rooms[:head_count]]
+
 # clarify with user what rooms they intend for indoor heads to be placed
 def post_validate_intent(intent: dict, building_summary: dict, transcript: str) -> dict:
     rooms_by_zone = {}
@@ -491,10 +505,20 @@ def post_validate_intent(intent: dict, building_summary: dict, transcript: str) 
                     }
                     continue
 
+                fallback_rooms = pick_top_rooms_by_load(zone_name, building_summary, head_count)
+                sys["scope"] = {
+                    "type": "rooms",
+                    "zone_name": None,
+                    "room_names": fallback_rooms,
+                }
+
                 room_list = ", ".join(zone_rooms)
+                fallback_list = ", ".join(fallback_rooms)
                 extra_questions.append(
                     f"The {zone_name} zone has {len(zone_rooms)} rooms: {room_list}. "
                     f"You requested {head_count} ductless heads. Which rooms should the heads serve?"
+                    f"I generated a provisional recommendation using the highest-load rooms: {fallback_list}. "
+                    f"If you want different rooms served, tell me which ones."
                 )
 
     if extra_questions:

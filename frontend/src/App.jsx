@@ -1139,22 +1139,22 @@ export default function App() {
                 <div
                   key={idx}
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 140px",
-                    columnGap: 10,   // 🔥 horizontal spacing
-                    rowGap: 4,
-                    alignItems: "end",
-                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    minWidth: 0,
                   }}
                 >
-                  <label style={{ ...styles.reqLabel, display: "flex", flexDirection: "column", minWidth: 0 }}>
-                    <span style={styles.reqLabelText}>Head {idx + 1} Room</span>
+                  <div style={styles.reqLabelText}>Head {idx + 1}</div>
+
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                    <span style={styles.reqLabelText}>Room</span>
                     <select
                       style={{
                         ...styles.input,
                         width: "100%",
                         boxSizing: "border-box",
-                        minWidth: 0,   // 🔥 prevents overflow stacking
+                        minWidth: 0,
                       }}
                       value={head.roomId}
                       onChange={(e) => handleHeadRoomChange(idx, e.target.value)}
@@ -1168,10 +1168,15 @@ export default function App() {
                     </select>
                   </label>
 
-                  <label style={{ ...styles.reqLabel, display: "flex", flexDirection: "column", minWidth: 0 }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
                     <span style={styles.reqLabelText}>Req {idx + 1}</span>
                     <input
-                      style={{ ...styles.input, width: "100%", boxSizing: "border-box", minWidth: 0 }}
+                      style={{
+                        ...styles.input,
+                        width: "100%",
+                        boxSizing: "border-box",
+                        minWidth: 0,
+                      }}
                       value={head.btu}
                       onChange={(e) => handleHeadBtuChange(idx, e.target.value)}
                       placeholder="e.g. 9000"
