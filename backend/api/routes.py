@@ -24,16 +24,70 @@ def health():
 @router.post("/run")
 def run(req: RunRequest):
     try:
-        logger.info("POST /run manufacturer=%s type_filter=%s reqs=%s",
-                    req.manufacturer, req.type_filter, req.reqs)
-
-        result = run_logic(
-            manufacturer=req.manufacturer,
-            reqs=req.reqs,
-            type_filter=req.type_filter,
-            max_results=req.max_results,
+        logger.info(
+            "POST /run manufacturer=%s type_filter=%s reqs=%s",
+            req.manufacturer, req.type_filter, req.reqs
         )
-        return {"ok": True, "result": result}
+
+        allowed = ["Fujitsu", "LG", "All"]
+        if req.manufacturer not in allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown manufacturer: {req.manufacturer}"
+            )
+
+        if req.manufacturer != "All":
+            result = run_logic(
+                manufacturer=req.manufacturer,
+                reqs=req.reqs,
+                type_filter=req.type_filter,
+                max_results=req.max_results,
+            )
+
+            for row in result.get("results", []):
+                row["Manufacturer"] = req.manufacturer
+
+            return {"ok": True, "result": result}
+
+        manufacturers = ["Fujitsu", "LG"]
+        combined_results = []
+        max_heads = 0
+
+        for m in manufacturers:
+            result = run_logic(
+                manufacturer=m,
+                reqs=req.reqs,
+                type_filter=req.type_filter,
+                max_results=req.max_results,
+            )
+
+            max_heads = max(max_heads, result.get("max_heads", 0))
+
+            for row in result.get("results", []):
+                row = dict(row)
+                row["Manufacturer"] = m
+                combined_results.append(row)
+
+        combined_results = sorted(
+            combined_results,
+            key=lambda r: float(r.get("Total Oversize", float("inf")))
+        )
+
+        if req.max_results:
+            combined_results = combined_results[:req.max_results]
+
+        return {
+            "ok": True,
+            "result": {
+                "manufacturer": "All",
+                "type_filter": req.type_filter,
+                "max_heads": max_heads,
+                "results": combined_results,
+            },
+        }
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error in /run")
         raise HTTPException(status_code=500, detail=str(e))
@@ -44,10 +98,17 @@ def meta(manufacturer: str = Query(...)):
     Used by frontend to populate Type dropdown, max heads, etc.
     """
     try:
-        df = get_combos_cached(manufacturer)
+        allowed = ["Fujitsu", "LG", "All"]
+        if manufacturer not in allowed:
+            raise HTTPException(status_code=400, detail=f"Unknown manufacturer: {manufacturer}")
 
-        types = sorted(set(df["Type"].fillna("").astype(str).str.strip()))
-        max_heads = len(df.attrs.get("UNIT_COLS", []))
+        manufacturers = ["Fujitsu", "LG"] if manufacturer == "All" else [manufacturer]
+
+        dfs = [get_combos_cached(m) for m in manufacturers]
+        combined_df = pd.concat(dfs, ignore_index=True)
+
+        types = sorted(set(combined_df["Type"].fillna("").astype(str).str.strip()))
+        max_heads = max((len(df.attrs.get("UNIT_COLS", [])) for df in dfs), default=0)
 
         return {
             "ok": True,
@@ -55,10 +116,12 @@ def meta(manufacturer: str = Query(...)):
             "max_heads": max_heads,
             "types": ["All"] + [t for t in types if t],
         }
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error in /meta")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/_debug/df")
 def debug_df(

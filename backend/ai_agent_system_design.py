@@ -387,14 +387,41 @@ def get_intent(building_summary: dict, user_text: str, model: str) -> dict:
         input=[
             {"role": "system", "content": (
                 "Convert the user's HVAC scope request into intent JSON.\n"
+                "\n"
                 "Rules:\n"
                 "- Only reference zone_name and room_name values that appear in building_summary.\n"
-                "- If ambiguous, add a question in questions[].\n"
-                "- Prefer scope.type='zone_all' for floors/stories.\n"
-                "- Output MUST match the JSON schema exactly.\n"
-                "- For scope.type='zone_all': set scope.zone_name to an existing zone, and set scope.room_names to null.\n"
-                "- For scope.type='rooms': set scope.room_names to a list of existing room names, and set scope.zone_name to null.\n"
+                "- Extract values when the user provides them.\n"
+                "- NEVER ask about a field the user already specified.\n"
+                "- Ask questions ONLY if required information is missing.\n"
+                "\n"
+                "Required fields to generate a system:\n"
+                "- scope.type\n"
+                "- distribution\n"
+                "- indoor_head_count\n"
+                "- margin_pct\n"
+                "\n"
+                "If these fields are present, DO NOT ask more questions and return an empty questions array.\n"
+                "\n"
+                "Optional fields (do not block recommendations):\n"
+                "- manufacturer\n"
+                "- max_breaker_amps\n"
+                "- priority\n"
+                "\n"
+                "Interpret percentages like '10%' as decimal values (0.10).\n"
+                "\n"
+                "Prefer scope.type='zone_all' for floors/stories.\n"
+                "\n"
+                "Output MUST match the JSON schema exactly.\n"
+                "\n"
+                "- For scope.type='zone_all': set scope.zone_name to an existing zone and scope.room_names to null.\n"
+                "- For scope.type='rooms': set scope.room_names to existing room names and scope.zone_name to null.\n"
                 "- For scope.type='whole_building': set both scope.zone_name and scope.room_names to null.\n"
+                "- If scope.type='zone_all' and indoor_head_count equals the number of rooms in that zone, assume one head per room unless the user specifies otherwise.\n"
+                "\n"
+                "- For ductless systems, if scope.type='zone_all' and the selected zone contains more rooms than indoor_head_count, ask which rooms should be served unless the user already specified room names.\n"
+                "- If indoor_head_count is less than the number of rooms in a zone, do not assume all rooms are served by individual heads.\n"
+                "- In that case, return a clarification question asking which rooms or room groupings should be covered.\n"
+                "- For ductless systems, if a zone contains more rooms than the requested indoor_head_count, prefer asking which rooms should be served.\n"
             )},
             {"role": "user", "content": (
                 "building_summary:\n"
@@ -413,6 +440,68 @@ def get_intent(building_summary: dict, user_text: str, model: str) -> dict:
         },
     )
     return json.loads(resp.output_text)
+
+def extract_named_rooms_from_transcript(user_text: str, zone_name: str, building_summary: dict) -> list[str]:
+    zone_rooms = [
+        r.get("room_name")
+        for r in building_summary.get("rooms", [])
+        if r.get("zone_name") == zone_name and r.get("room_name")
+    ]
+
+    text = (user_text or "").lower()
+    matched = []
+
+    for room in zone_rooms:
+        if room and room.lower() in text:
+            matched.append(room)
+
+    return matched
+
+# clarify with user what rooms they intend for indoor heads to be placed
+def post_validate_intent(intent: dict, building_summary: dict, transcript: str) -> dict:
+    rooms_by_zone = {}
+    for r in building_summary.get("rooms", []) or []:
+        zn = r.get("zone_name")
+        rn = r.get("room_name")
+        if zn and rn:
+            rooms_by_zone.setdefault(zn, []).append(rn)
+
+    extra_questions = []
+
+    for sys in intent.get("systems", []) or []:
+        scope = sys.get("scope", {}) or {}
+        distribution = (sys.get("distribution") or "").strip().lower()
+        head_count = int(sys.get("indoor_head_count") or 0)
+
+        if distribution != "ductless":
+            continue
+
+        if scope.get("type") == "zone_all":
+            zone_name = scope.get("zone_name")
+            zone_rooms = rooms_by_zone.get(zone_name, [])
+
+            if zone_name and head_count > 0 and len(zone_rooms) > head_count:
+                matched_rooms = extract_named_rooms_from_transcript(transcript, zone_name, building_summary)
+
+                if matched_rooms:
+                    sys["scope"] = {
+                        "type": "rooms",
+                        "zone_name": None,
+                        "room_names": matched_rooms,
+                    }
+                    continue
+
+                room_list = ", ".join(zone_rooms)
+                extra_questions.append(
+                    f"The {zone_name} zone has {len(zone_rooms)} rooms: {room_list}. "
+                    f"You requested {head_count} ductless heads. Which rooms should the heads serve?"
+                )
+
+    if extra_questions:
+        intent["questions"] = extra_questions
+        intent["systems"] = []
+
+    return intent
 
 def recommend_from_intent(intent: dict, building_summary: dict) -> dict:
     # Index rooms by zone and name
@@ -519,7 +608,9 @@ def recommend_from_intent(intent: dict, building_summary: dict) -> dict:
             "selected_rooms": selected,                  # [(zone, room), ...]
             "selected_room_labels": selected_room_labels, # ["Zone / Room", ...]
 
-            "room_load_lookup": room_load,               # {(zone, room): btu}
+            "room_load_lookup": {
+                f"{zn}||{rn}": btu for (zn, rn), btu in room_load.items()
+            },               # {(zone, room): btu}
             "required_heat_btu_hr": required_btu,
             "candidates": cands,
         })
@@ -601,7 +692,7 @@ def format_rooms_with_loads(selected_rooms, room_load_lookup):
     grouped = defaultdict(list)
 
     for zone, room in selected_rooms:
-        load = room_load_lookup.get((zone, room))
+        load = room_load_lookup.get(f"{zone}||{room}")
         if isinstance(load, (int, float)):
             grouped[zone].append((room, load))
         else:
@@ -786,7 +877,7 @@ def interactive_loop(building_summary: dict, model_intent: str, out_path: Path):
                     room_loads = []
                     for zone_name, room_name in selected_rooms:
                         # you likely already have a dict like rooms_by_zone_loads
-                        load = room_load_lookup.get((zone_name, room_name))
+                        load = room_load_lookup.get(f"{zone_name}||{room_name}")
                         if load is not None:
                             room_loads.append({
                                 "room_name": f"{zone_name} / {room_name}",

@@ -53,24 +53,33 @@ export default function AiChatPanel({
     setSelectedIds(arr.length ? arr : ["whole_unit"]);
   };
 
+  // make sure the backend sees the full chat transcript for an ai recommendation
   const send = async () => {
     const text = (aiUserText || "").trim();
     if (!text || aiLoading) return;
 
-    // Update transcript
-    setMessages((m) => [...m, { role: "user", content: text }]);
+    const userMsg = { role: "user", content: text };
+    const updatedMessages = [...messages, userMsg];
+
+    setMessages(updatedMessages);
     setAiUserText("");
 
     try {
-      const payload = await onSend(text);
+      const payload = await onSend(text, updatedMessages);
 
-      // If your backend returns intent.questions, show them as assistant messages
       const questions = payload?.intent?.questions || [];
       if (questions.length) {
-        setMessages((m) => [
-          ...m,
-          ...questions.map((q) => ({ role: "assistant", content: q })),
-        ]);
+        setMessages((m) => {
+          const existingAssistantTexts = new Set(
+            m.filter((msg) => msg.role === "assistant").map((msg) => msg.content)
+          );
+
+          const newQuestionMessages = questions
+            .filter((q) => !existingAssistantTexts.has(q))
+            .map((q) => ({ role: "assistant", content: q }));
+
+          return [...m, ...newQuestionMessages];
+        });
       } else {
         setMessages((m) => [...m, { role: "assistant", content: "Done. I updated results." }]);
       }
@@ -142,7 +151,7 @@ export default function AiChatPanel({
           overflowY: "auto",
           border: "1px solid #ddd",
           borderRadius: 10,
-          //padding: 10,
+          padding: 10,
           background: "white",
         }}
       >

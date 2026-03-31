@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 // import for AI agent helpers
-import { aiRecommend, candidatesToRows, buildAiDetailsText } from "./aiAgent";
+import { aiRecommend, buildAiDetailsText } from "./aiAgent";
 import AiChatPanel from "./AiChatPanel";
 
-const MANUFACTURERS = ["Fujitsu", "LG"];
+const MANUFACTURERS = ["All", "Fujitsu", "LG"];
 
 // just used for Ai dev vs prod environment
 function ComingSoonTab() {
@@ -151,6 +151,7 @@ function ResultsSection({
         <table style={styles.table}>
           <thead>
             <tr>
+              <th style={styles.th}>Manufacturer</th>
               <th style={styles.th}>Model</th>
               <th style={styles.th}>Type</th>
               <th style={styles.th}>Indoor Capacity</th>
@@ -180,6 +181,7 @@ function ResultsSection({
 
                   }}
                 >
+                  <td style={styles.td}>{r.Manufacturer || r.manufacturer || ""}</td>
                   <td style={styles.td}>{r.Model}</td>
                   <td style={styles.td}>{r.Type}</td>
                   <td style={styles.tdCenter}>
@@ -211,6 +213,42 @@ function ResultsSection({
   );
 }
 
+function buildCalculatorStateFromConduit(load) {
+  if (!load || typeof load !== "object") {
+    return null;
+  }
+
+  // adjust these fields to your real payload shape
+  const manufacturer = load.manufacturer || "All";
+
+  // try several likely shapes for room/head loads
+  let rawReqs = [];
+
+  if (Array.isArray(load.reqs)) {
+    rawReqs = load.reqs;
+  } else if (Array.isArray(load.rooms)) {
+    rawReqs = load.rooms.map((r) =>
+      r?.heating_load_btuh ??
+      r?.heating_btuh ??
+      r?.load_btuh ??
+      r?.required_btuh ??
+      ""
+    );
+  } else if (Array.isArray(load.head_requirements)) {
+    rawReqs = load.head_requirements;
+  }
+
+  const reqs = rawReqs
+    .map((v) => String(v ?? "").trim())
+    .filter((v) => v !== "");
+
+  return {
+    manufacturer,
+    reqs,
+    roomCount: Math.max(1, reqs.length),
+  };
+}
+
 export default function App() {
   // making sure ai portion doesnt show on prod until ready
   const ENABLE_AI =
@@ -219,7 +257,7 @@ export default function App() {
   console.log("VITE_ENABLE_AI =", import.meta.env.VITE_ENABLE_AI);
 
   // --- top bar state ---
-  const [manufacturer, setManufacturer] = useState("Fujitsu");
+  const [manufacturer, setManufacturer] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [types, setTypes] = useState(["All"]);
 
@@ -227,7 +265,7 @@ export default function App() {
   const [roomCount, setRoomCount] = useState(1);
 
   // --- dynamic room requirements ---
-  const [reqs, setReqs] = useState(["9000", "7000"]); // same default vibe as your GUI
+  const [reqs, setReqs] = useState(["9000"]); // same default vibe as your GUI
 
   // --- results ---
   const [loading, setLoading] = useState(false);
@@ -242,41 +280,141 @@ export default function App() {
   const [sortKey, setSortKey] = useState(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState("asc");
 
-  const sortColumns = ["Total Oversize", "Worst Margin", "Indoor Capacity", "Total Capacity", "Model", "Type", "Units"]; 
+  const sortColumns = ["Total Oversize", "Worst Margin", "Indoor Capacity", "Total Capacity", "Model", "Type", "Units", "Manufacturer"]; 
 
   // setting variables for AI agent integration
   const [aiUserText, setAiUserText] = useState("");
+  const [messages, setMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
 
   const [roomCatalog, setRoomCatalog] = useState(null);
-  const [selectedIds, setSelectedIds] = useState(["whole_unit"]); // default
+  const [selectedIds, setSelectedIds] = useState([]); //(["whole_unit"]); // default
+
+  // setting logic for fetching conduit data from generator upload
+  const [incomingLoad, setIncomingLoad] = useState(null);
+  const [loadImported, setLoadImported] = useState(false);
+
+  // IMPORTANT: origin strings do not end with "/"
+  const GENERATOR_ORIGIN =
+    import.meta.env.VITE_GENERATOR_ORIGIN ||
+    "https://wonderful-desert-0055d690f-staging.eastus2.1.azurestaticapps.net";
+
+  // tell parent iframe host that calculator is ready
+  useEffect(() => {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(
+        { type: "calculator_ready" },
+        GENERATOR_ORIGIN
+      );
+      console.log("📤 Sent calculator_ready to parent:", GENERATOR_ORIGIN);
+    }
+  }, [GENERATOR_ORIGIN]);
+
+  useEffect(() => {
+    if (!incomingLoad) return;
+
+    console.log("📦 Incoming conduit load:", incomingLoad);
+
+    const mapped = buildCalculatorStateFromConduit(incomingLoad);
+
+    if (!mapped) {
+      console.log("⚠️ Could not map incoming conduit load");
+      return;
+    }
+
+    console.log("🧭 Mapped conduit load for calculator:", mapped);
+
+    if (mapped.manufacturer) {
+      setManufacturer(mapped.manufacturer);
+    }
+
+    if (mapped.roomCount) {
+      setRoomCount(mapped.roomCount);
+    }
+
+    if (mapped.reqs?.length) {
+      setReqs(mapped.reqs);
+    }
+
+    setSelectedRow(null);
+    setResults([]);
+    setError("");
+    setLoadImported(true);
+  }, [incomingLoad]);
+
+  // receive conduit load from proposal generator
+  useEffect(() => {
+    function handleMessage(event) {
+      if (event.origin !== GENERATOR_ORIGIN) {
+        console.log("⛔ Ignoring message from unexpected origin:", event.origin);
+        return;
+      }
+
+      if (!event?.data) return;
+
+      console.log("📩 Calculator received message:", event.data);
+
+      if (event.data.type === "conduit_load") {
+        setIncomingLoad(event.data.payload || null);
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [GENERATOR_ORIGIN]);
+
+  useEffect(() => {
+    if (!loadImported) return;
+    if (!reqs.length) return;
+
+    const timer = setTimeout(() => {
+      runSolver();
+      setLoadImported(false);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [loadImported, reqs]);
 
   useEffect(() => {
     console.log("Fetching AI catalog...");
 
-    fetch("/api/ai/catalog")
-      .then(r => {
+    fetch("/api/ai/catalog", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        loads: incomingLoad,
+      }),
+    })
+      .then(async (r) => {
         console.log("Catalog response status:", r.status);
-        return r.json();
+        console.log("Catalog response content-type:", r.headers.get("content-type"));
+
+        const text = await r.text();
+        console.log("Catalog raw response:", text.slice(0, 500));
+
+        return JSON.parse(text);
       })
-      .then(data => {
+      .then((data) => {
         console.log("Catalog data:", data);
         setRoomCatalog(data);
       })
-      .catch(e => {
+      .catch((e) => {
         console.error("Catalog fetch error:", e);
         setAiError(e.message || String(e));
       });
   }, []);
 
   // function to run AI agent
-  async function runAi(textOverride) {
+  async function runAi(textOverride, messages = []) {
     const text = (textOverride ?? aiUserText).trim();
 
     console.log("Room Catalog for AI agent:", roomCatalog);
     console.log("selectedIds:", selectedIds);
     console.log("🤖 Running AI agent with user text:", text);
+    console.log("🤖 Full AI chat history:", messages);
 
     if (!roomCatalog) {
       setAiError("Room catalog not loaded yet.");
@@ -289,15 +427,32 @@ export default function App() {
 
       const payload = await aiRecommend({
         user_text: text,
-        selected_ids: selectedIds,
+        //selected_ids: selectedIds,
+        chat_history: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        loads: incomingLoad,
         // intent_model: "gpt-5.2",
       });
+
+      console.log("AI payload intent:", payload?.intent);
+      console.log("AI payload rec:", payload?.rec);
+      console.log("AI draft warnings:", payload?.rec?.warnings);
+      console.log("AI draft candidates:", payload?.rec?.drafts?.[0]?.candidates);
 
       console.log("🤖 AI RAW PAYLOAD:", payload);
 
       const draft = payload?.rec?.drafts?.[0];
       console.log("📦 AI DRAFT:", draft);
-      const aiRows = candidatesToRows(draft);
+
+      // need to make sure aiRows has __aiCandidate set to build AI specific details pane for user
+      const aiRows = (draft?.candidates || []).map((c, i) => ({
+        ...c,
+        __aiCandidate: c,   // 👈 flag that this row came from AI
+        __aiMeta: payload?.rec || {}, // optional but useful later
+        _rowId: `ai-${i}-${c.outdoor_model || c.Model || "row"}`
+      }));
       console.log("📊 AI ROWS GENERATED:", aiRows);
 
       setResults(aiRows);
@@ -331,10 +486,13 @@ export default function App() {
 
     // ✅ AI row details
     if (selectedRow.__aiCandidate) {
+      console.log("🧾 Building AI details text for AI row:", selectedRow.__aiCandidate);
       return buildAiDetailsText(selectedRow);
     }
+    
 
     const r = selectedRow;
+    const manufacturer = r.Manufacturer ?? "";
     const model = r.Model ?? "";
     const type = r.Type ?? "";
     const units = r.Units ?? "";
@@ -355,6 +513,7 @@ export default function App() {
     console.log("🧾 details of selected row data:", r)
 
     const lines = [
+      `Manufacturer: ${manufacturer}`,
       `Model: ${model}`,
       "Performance:",
       `  Op. Watts/Htg: ${fmt(op_watts)}`,
@@ -415,8 +574,14 @@ export default function App() {
     setSelectedRow(null);
 
     try {
+      console.log("manufacturer before fetch:", m);
+
       const res = await fetch(`/api/meta?manufacturer=${encodeURIComponent(m)}`);
       const data = await res.json();
+
+      console.log("meta response status:", res.status);
+      console.log("meta response data:", data);
+
       if (!res.ok) throw new Error(data?.detail || "Failed to load metadata");
 
       setTypes(data.types || ["All"]);

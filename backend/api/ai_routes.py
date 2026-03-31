@@ -1,11 +1,13 @@
 import logging
 import traceback
+import math
+from typing_extensions import Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pathlib import Path
 
-from ai_agent_system_design import get_intent, recommend_from_intent
+from ai_agent_system_design import get_intent, recommend_from_intent, build_building_summary, post_validate_intent
 from ashp_calculator_logic import run_logic
 
 logger = logging.getLogger("ashp.ai")
@@ -114,6 +116,15 @@ def default_loads():
 
     return loads
 
+def resolve_loads(loads: dict | None) -> dict:
+    """
+    Use generator-provided conduit loads when available.
+    Fall back to default stub only for local testing.
+    """
+    if isinstance(loads, dict) and loads:
+        return loads
+    return default_loads()
+
 def build_room_catalog(loads: dict) -> dict:
     items = []
     for z in loads.get("zones", []):
@@ -133,12 +144,15 @@ def build_room_catalog(loads: dict) -> dict:
         "catalog_version": "1.0",
         "scope": "rooms",
         "items": items,
-        "whole_unit_option": {"id": "WHOLE", "label": "Entire Unit"},
+        "whole_unit_option": {"id": "whole_unit", "label": "Entire Unit"},
     }
 
-@router.get("/ai/catalog")
-def ai_catalog():
-    loads = default_loads()
+class CatalogReq(BaseModel):
+    loads: dict | None = None
+
+@router.post("/ai/catalog")
+def ai_catalog(req: CatalogReq):
+    loads = resolve_loads(req.loads)
     print("Generated room catalog from loads:", loads)
     return build_room_catalog(loads)
 
@@ -235,31 +249,61 @@ def reqs_from_loads(loads: dict, selected_ids: list[str] | None, head_count: int
     return reqs, total
 
 # adding in logic for AI agent to recommend ASHP system design
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
 class RecommendReq(BaseModel):
     user_text: str
-    selected_ids: list[str] = ["whole_unit"]
+    selected_ids: list[str] | None = None #= Field(default_factory=lambda: ["whole_unit"])
     intent_model: str | None = None
+    chat_history: list[ChatTurn] = Field(default_factory=list)
+    loads: dict | None = None
+
+def build_intent_transcript(chat_history: list[ChatTurn], latest_user_text: str) -> str:
+    parts: list[str] = []
+
+    for msg in chat_history:
+        text = (msg.content or "").strip()
+        if not text:
+            continue
+
+        if msg.role == "user":
+            parts.append(f"User: {text}")
+        else:
+            parts.append(f"Assistant: {text}")
+
+    latest = (latest_user_text or "").strip()
+    if latest:
+        if not parts or parts[-1] != f"User: {latest}":
+            parts.append(f"User: {latest}")
+
+    return "\n".join(parts)
 
 @router.post("/ai/recommend")
 def ai_recommend(req: RecommendReq):
 
     try:
-        loads = default_loads()
+        loads = resolve_loads(req.loads)
 
-        building_summary = {
-            "loads": loads,
-            "text": "",
-        }
+        building_summary = build_building_summary(loads)
 
+        transcript = build_intent_transcript(req.chat_history, req.user_text)
         print("AI RECOMMEND - building summary:", building_summary)
 
         intent = get_intent(
             building_summary=building_summary,
-            user_text=req.user_text,
+            user_text=transcript,
             model=normalize_intent_model(req.intent_model),
         )
 
+        # confirm with user about room selection
+        intent = post_validate_intent(intent, building_summary, transcript)
+
         rec = recommend_from_intent(intent, building_summary)
+
+        print("REC AFTER recommend_from_intent:", rec)
+        print("REC WARNINGS:", rec.get("warnings", []))
 
         # ✅ Enrich each draft by calling the SAME deterministic engine as /api/run
         for d in rec.get("drafts", []):
@@ -267,14 +311,45 @@ def ai_recommend(req: RecommendReq):
             distribution = d.get("distribution") or "ductless"
             type_filter = "Non-ducted" if distribution == "ductless" else "Ducted"
 
-            selected_ids = req.selected_ids or ["whole_unit"]
-            reqs, required_total = reqs_from_loads(loads, selected_ids, head_count=head_count)
+            selected_rooms = d.get("selected_rooms") or []
+            room_load_lookup = d.get("room_load_lookup") or {}
+            margin_pct = float(d.get("margin_pct") or 0.15)
+
+            # Build reqs from AI-selected rooms if available
+            if selected_rooms:
+                room_loads = []
+                for zone_name, room_name in selected_rooms:
+                    key = f"{zone_name}||{room_name}"
+                    btu = room_load_lookup.get(key)
+                    if isinstance(btu, (int, float)):
+                        room_loads.append(float(btu) * (1 + margin_pct))
+
+                # sort biggest-to-smallest and round up
+                room_loads = sorted(room_loads, reverse=True)
+
+                # if user asked for more heads than selected rooms, keep only available room loads
+                #reqs = [math.ceil(r / 1000) * 1000 for r in room_loads[:head_count]]
+                reqs = [round(r) for r in room_loads[:head_count]]
+
+                required_total = sum(reqs)
+            else:
+                # fallback only if no room scope could be resolved
+                selected_ids = req.selected_ids or ["whole_unit"]
+                reqs, required_total = reqs_from_loads(loads, selected_ids, head_count=head_count)
+                reqs = [math.ceil(r / 1000) * 1000 for r in reqs]
+                required_total = sum(reqs)
 
             d["required_heat_btu_hr"] = required_total
             d["reqs"] = reqs
 
-            # manufacturer default for now (or take from intent)
             manufacturer = "Fujitsu"
+
+            print("AI DRAFT BEFORE ENGINE:", d)
+            print("HEAD COUNT:", head_count)
+            print("DISTRIBUTION:", distribution)
+            print("TYPE FILTER:", type_filter)
+            print("REQS SENT TO ENGINE:", reqs)
+            print("REQUIRED TOTAL:", required_total)
 
             engine = run_logic(
                 manufacturer=manufacturer,
@@ -282,9 +357,15 @@ def ai_recommend(req: RecommendReq):
                 type_filter=type_filter,
                 max_results=300,
             )
+            
+            print("ENGINE RAW RESULT:", engine)
+            logging.info("ENGINE RESULT COUNT: %s", len(engine.get("results", [])))
 
-            # IMPORTANT: use the deterministic engine rows as candidates
             d["candidates"] = engine.get("results", [])
+
+            print(f"Enriched draft with deterministic engine results:\nIntent: {intent}\nDraft: {d}")
+
+            print(">>> HIT /api/ai/recommend <<<")
 
         return {"intent": intent, "rec": rec}
 
@@ -296,28 +377,3 @@ def ai_recommend(req: RecommendReq):
         print("AI RECOMMEND ERROR:", repr(e))
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/ai/catalog")
-def ai_catalog():
-    loads = default_loads()
-    print("Generated room catalog from loads:", loads)
-    return build_room_catalog(loads)   # items + whole_unit_option
-
-# Only mount the SPA AFTER your API routes, and exclude /api/* from the fallback
-if ASSETS_DIR.exists() and INDEX_HTML.exists():
-    # Vite assets live in /assets
-    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
-
-    @router.get("/")
-    def spa_index():
-        return FileResponse(INDEX_HTML)
-
-    @router.get("/{full_path:path}")
-    def spa_fallback(full_path: str, request: Request):
-        if full_path.startswith("api/"):
-            raise HTTPException(status_code=404, detail="Not Found")
-        return FileResponse(INDEX_HTML)
-else:
-    @router.get("/")
-    def home():
-        return RedirectResponse("/docs")

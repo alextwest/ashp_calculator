@@ -2,11 +2,15 @@
 
 // ---- 1) API call: summary + user text -> { intent, rec }
 export async function aiRecommend(body) {
+  console.log("Hitting /ai/recommend API")
   const resp = await fetch("/api/ai/recommend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+  console.log("Body sent to AI recommend API:", body);
+  console.log("Raw response from AI recommend API:", resp);
 
   if (!resp.ok) {
     const txt = await resp.text();
@@ -78,46 +82,163 @@ export function candidatesToRows(draft) {
 export function buildAiDetailsText(row) {
   const c = row?.__aiCandidate;
   const m = row?.__aiMeta;
-  if (!c || !m) return "";
+  if (!c) return "";
 
   const lines = [];
+
+  const num = (v, digits = 0) =>
+    typeof v === "number" && Number.isFinite(v) ? v.toFixed(digits) : "";
+
+  const val = (...values) => {
+    for (const v of values) {
+      if (v !== undefined && v !== null && v !== "") return v;
+    }
+    return "";
+  };
+
   lines.push("AI Recommendation");
-  lines.push(`System: ${m.system_name || ""}`);
-  lines.push(`Distribution: ${m.distribution || ""}`);
-  lines.push(`Heads: ${m.indoor_head_count ?? ""}`);
 
-  if (typeof m.margin_pct === "number") lines.push(`Margin: ${Math.round(m.margin_pct * 100)}%`);
-  if (typeof m.required_heat_btu_hr === "number") lines.push(`Required Heat: ${m.required_heat_btu_hr.toFixed(0)} BTU/hr`);
-  lines.push("");
+  // Meta info if present
+  const draft = m?.drafts?.[0] || null;
+  const intent = draft?.intent || m?.intent || null;
 
-  const rooms = m.selected_room_labels || [];
+  const systemName = val(
+    m?.system_name,
+    draft?.system_name,
+    intent?.system_name
+  );
+
+  const distribution = val(
+    m?.distribution,
+    draft?.distribution,
+    intent?.distribution
+  );
+
+  const headCount = val(
+    m?.indoor_head_count,
+    draft?.indoor_head_count,
+    intent?.indoor_head_count,
+    c?.heads_detected
+  );
+
+  const marginPct = val(
+    m?.margin_pct,
+    draft?.margin_pct,
+    intent?.margin_pct
+  );
+
+  const requiredHeat = val(
+    m?.required_heat_btu_hr,
+    draft?.required_heat_btu_hr,
+    intent?.required_heat_btu_hr
+  );
+
+  if (systemName) lines.push(`System: ${systemName}`);
+  if (distribution) lines.push(`Distribution: ${distribution}`);
+  if (headCount !== "") lines.push(`Heads: ${headCount}`);
+  if (typeof marginPct === "number") lines.push(`Margin: ${Math.round(marginPct * 100)}%`);
+  if (typeof requiredHeat === "number") lines.push(`Required Heat: ${requiredHeat.toFixed(0)} BTU/hr`);
+
+  const rooms =
+    m?.selected_room_labels ||
+    draft?.selected_room_labels ||
+    intent?.selected_room_labels ||
+    [];
+
+  if (lines.length > 1 || rooms.length) lines.push("");
+
   if (rooms.length) {
     lines.push(`Rooms (${rooms.length}):`);
-    rooms.slice(0, 40).forEach(r => lines.push(`  • ${r}`));
+    rooms.slice(0, 40).forEach((r) => lines.push(`  • ${r}`));
     if (rooms.length > 40) lines.push(`  … +${rooms.length - 40} more`);
     lines.push("");
   }
 
   lines.push("Selected Candidate");
-  lines.push(`Outdoor: ${c.outdoor_model || ""}`);
-  lines.push(`Mix: ${c.unit_mix || ""}`);
+  lines.push(`Manufacturer: ${val(c.manufacturer, c.Manufacturer)}`);
+  lines.push(`Outdoor: ${val(c.outdoor_model, c.Model)}`);
+  lines.push(`Type: ${val(c.type, c.Type)}`);
+  lines.push(`Mix: ${val(c.unit_mix, c.Units)}`);
 
-  lines.push(`Worst margin: ${Number(r.worst_margin ?? 0).toFixed(0)}`);
-  lines.push(`Total oversize: ${Number(r.margin_total ?? 0).toFixed(0)}`);
+  const worstMargin = val(c.worst_margin, c["Worst Margin"]);
+  const totalOversize = val(c.margin_total, c["Total Oversize"]);
 
-  if (c.btu_5f != null) lines.push(`BTU @5F: ${Number(c.btu_5f).toFixed(0)}`);
-  if (c.btu_0f != null) lines.push(`BTU @0F: ${Number(c.btu_0f).toFixed(0)}`);
-  if (c.total_capacity != null) lines.push(`Total: ${Number(c.total_capacity).toFixed(0)}`);
+  if (worstMargin !== "") lines.push(`Worst Margin: ${num(Number(worstMargin))}`);
+  if (totalOversize !== "") lines.push(`Total Oversize: ${num(Number(totalOversize))}`);
+
+  const btu5 = val(c.btu_5f, c["BTU @ 5*F"], c["BTU @5F"]);
+  const btu0 = val(c.btu_0f, c["BTU @ 0*F"], c["BTU @0F"]);
+  const totalCap = val(c.total_capacity, c["Total Capacity"]);
+  const indoorCap = val(c.indoor_capacity, c["Indoor Capacity"]);
+
+  if (btu5 !== "") lines.push(`BTU @ 5°F: ${num(Number(btu5))}`);
+  if (btu0 !== "") lines.push(`BTU @ 0°F: ${num(Number(btu0))}`);
+  if (totalCap !== "") lines.push(`Total Capacity: ${num(Number(totalCap))}`);
+  if (indoorCap !== "") lines.push(`Indoor Capacity: ${num(Number(indoorCap))}`);
+
   lines.push("");
 
-  if (c.breaker_req != null) lines.push(`Breaker: ${Number(c.breaker_req).toFixed(0)}A`);
-  if (c.op_watts_htg != null) lines.push(`OpWatts(Htg): ${Number(c.op_watts_htg).toFixed(0)}`);
-  lines.push(`SEER2: ${c.seer2 ?? ""}  EER2: ${c.eer2 ?? ""}  HSPF2: ${c.hspf2 ?? ""}`);
+  const breaker = val(c.breaker_req, c["Breaker Req."]);
+  const watts = val(c.op_watts_htg, c["Op. Watts/Htg"]);
+  const tonnage = val(c.tonnage, c.Tonnage);
+  const seer2 = val(c.seer2, c.SEER2);
+  const eer2 = val(c.eer2, c.EER2);
+  const hspf2 = val(c.hspf2, c.HSPF2);
 
-  if (c.meets_required != null) {
+  if (breaker !== "") lines.push(`Breaker: ${num(Number(breaker))}A`);
+  if (watts !== "") lines.push(`Op. Watts (Htg): ${num(Number(watts))}`);
+  if (tonnage !== "") lines.push(`Tonnage: ${num(Number(tonnage), 2)}`);
+  if (seer2 !== "" || eer2 !== "" || hspf2 !== "") {
+    lines.push(`SEER2: ${seer2 ?? ""}  EER2: ${eer2 ?? ""}  HSPF2: ${hspf2 ?? ""}`);
+  }
+
+  const mapping = Array.isArray(c.mapping) ? c.mapping : [];
+
+  // const roomRequests =
+  //   m?.room_requests ||
+  //   draft?.room_requests ||
+  //   intent?.room_requests ||
+  //   [];
+
+  // const assignmentLabels = roomRequests.length
+  //   ? roomRequests.map(r => r.room_name || r.label || "")
+  //   : rooms;
+
+  const useRoomLabels = Array.isArray(rooms) && rooms.length === mapping.length;
+
+  if (mapping.length) {
     lines.push("");
-    lines.push(`Meets required: ${c.meets_required ? "Yes" : "No"}`);
-    if (typeof c.delta_btu === "number") lines.push(`Delta: ${c.delta_btu.toFixed(0)} BTU`);
+    lines.push("Head Assignment:");
+
+    mapping.forEach((pair, i) => {
+      const [req, cap] = Array.isArray(pair) ? pair : [];
+
+      const margin =
+        typeof req === "number" && typeof cap === "number"
+          ? cap - req
+          : null;
+
+      const pct =
+        typeof margin === "number" && typeof req === "number" && req > 0
+          ? (margin / req) * 100
+          : null;
+
+      //const room = rooms[i] || "";
+
+      const roomLabel = useRoomLabels && rooms?.[i]
+        ? ` (${rooms[i].split("/").pop().trim()})`
+        : "";
+      //assignmentLabels?.[i]
+        //? ` (${assignmentLabels[i].split("/").pop().trim()})`
+        //: "";
+
+      lines.push(
+        `  ${i + 1}. Req ${num(Number(req))} → Cap ${num(Number(cap))}` +
+        (margin != null ? ` | Margin ${num(margin)}` : "") +
+        (pct != null ? ` | ${pct.toFixed(1)}%` : "") +
+        roomLabel
+      );
+    });
   }
 
   return lines.join("\n");
