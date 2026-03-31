@@ -24,16 +24,53 @@ def health():
 @router.post("/run")
 def run(req: RunRequest):
     try:
-        logger.info("POST /run manufacturer=%s type_filter=%s reqs=%s",
-                    req.manufacturer, req.type_filter, req.reqs)
-
-        result = run_logic(
-            manufacturer=req.manufacturer,
-            reqs=req.reqs,
-            type_filter=req.type_filter,
-            max_results=req.max_results,
+        logger.info(
+            "POST /run manufacturer=%s type_filter=%s reqs=%s",
+            req.manufacturer, req.type_filter, req.reqs
         )
-        return {"ok": True, "result": result}
+
+        allowed = ["Fujitsu", "LG", "All"]
+        if req.manufacturer not in allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown manufacturer: {req.manufacturer}"
+            )
+
+        manufacturers = ["Fujitsu", "LG"] if req.manufacturer == "All" else [req.manufacturer]
+
+        combined_results = []
+
+        for m in manufacturers:
+            result = run_logic(
+                manufacturer=m,
+                reqs=req.reqs,
+                type_filter=req.type_filter,
+                max_results=req.max_results,
+            )
+
+            if isinstance(result, list):
+                for row in result:
+                    row = dict(row)
+                    row["Manufacturer"] = m
+                    combined_results.append(row)
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Unexpected result format from run_logic for {m}"
+                )
+
+        combined_results = sorted(
+            combined_results,
+            key=lambda r: float(r.get("Total Oversize", float("inf")))
+        )
+
+        if req.max_results:
+            combined_results = combined_results[:req.max_results]
+
+        return {"ok": True, "result": combined_results}
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error in /run")
         raise HTTPException(status_code=500, detail=str(e))
