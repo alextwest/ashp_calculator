@@ -1142,16 +1142,22 @@ export default function App() {
                   key={idx}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "minmax(0, 1fr) 140px",
-                    gap: 8,
+                    gridTemplateColumns: "1fr 140px",
+                    columnGap: 10,   // 🔥 horizontal spacing
+                    rowGap: 4,
                     alignItems: "end",
-                    minWidth: 0,
+                    width: "100%",
                   }}
                 >
-                  <label style={styles.reqLabel}>
+                  <label style={{ ...styles.reqLabel, display: "flex", flexDirection: "column", minWidth: 0 }}>
                     <span style={styles.reqLabelText}>Head {idx + 1} Room</span>
                     <select
-                      style={{ ...styles.input, width: "100%", boxSizing: "border-box", minWidth: 0 }}
+                      style={{
+                        ...styles.input,
+                        width: "100%",
+                        boxSizing: "border-box",
+                        minWidth: 0,   // 🔥 prevents overflow stacking
+                      }}
                       value={head.roomId}
                       onChange={(e) => handleHeadRoomChange(idx, e.target.value)}
                     >
@@ -1164,7 +1170,7 @@ export default function App() {
                     </select>
                   </label>
 
-                  <label style={styles.reqLabel}>
+                  <label style={{ ...styles.reqLabel, display: "flex", flexDirection: "column", minWidth: 0 }}>
                     <span style={styles.reqLabelText}>Req {idx + 1}</span>
                     <input
                       style={{ ...styles.input, width: "100%", boxSizing: "border-box", minWidth: 0 }}
