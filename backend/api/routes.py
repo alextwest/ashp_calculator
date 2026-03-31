@@ -29,6 +29,13 @@ def run(req: RunRequest):
             req.manufacturer, req.type_filter, req.reqs
         )
 
+        allowed = ["Fujitsu", "LG", "All"]
+        if req.manufacturer not in allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown manufacturer: {req.manufacturer}"
+            )
+
         if req.manufacturer != "All":
             result = run_logic(
                 manufacturer=req.manufacturer,
@@ -36,11 +43,15 @@ def run(req: RunRequest):
                 type_filter=req.type_filter,
                 max_results=req.max_results,
             )
-            logger.info("run_logic result type=%s value=%s", type(result), result)
+
+            for row in result.get("results", []):
+                row["Manufacturer"] = req.manufacturer
+
             return {"ok": True, "result": result}
 
         manufacturers = ["Fujitsu", "LG"]
-        all_results = []
+        combined_results = []
+        max_heads = 0
 
         for m in manufacturers:
             result = run_logic(
@@ -49,10 +60,34 @@ def run(req: RunRequest):
                 type_filter=req.type_filter,
                 max_results=req.max_results,
             )
-            logger.info("run_logic result for %s type=%s value=%s", m, type(result), result)
 
-        return {"ok": True, "result": all_results}
+            max_heads = max(max_heads, result.get("max_heads", 0))
 
+            for row in result.get("results", []):
+                row = dict(row)
+                row["Manufacturer"] = m
+                combined_results.append(row)
+
+        combined_results = sorted(
+            combined_results,
+            key=lambda r: float(r.get("Total Oversize", float("inf")))
+        )
+
+        if req.max_results:
+            combined_results = combined_results[:req.max_results]
+
+        return {
+            "ok": True,
+            "result": {
+                "manufacturer": "All",
+                "type_filter": req.type_filter,
+                "max_heads": max_heads,
+                "results": combined_results,
+            },
+        }
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error in /run")
         raise HTTPException(status_code=500, detail=str(e))
