@@ -242,6 +242,7 @@ export default function App() {
   // making sure ai portion doesnt show on prod until ready
   const ENABLE_AI =
     import.meta.env.VITE_ENABLE_AI === "true" ||
+    import.meta.env.VITE_ENABLE_AI === "1" ||
     import.meta.env.DEV;
   console.log("VITE_ENABLE_AI =", import.meta.env.VITE_ENABLE_AI);
 
