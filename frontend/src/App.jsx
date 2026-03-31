@@ -218,29 +218,18 @@ function buildCalculatorStateFromConduit(load) {
     return null;
   }
 
-  // adjust these fields to your real payload shape
-  const manufacturer = load.manufacturer || "All";
+  const manufacturer = "All";
 
-  // try several likely shapes for room/head loads
-  let rawReqs = [];
+  const rooms = Array.isArray(load.zones)
+    ? load.zones.flatMap((zone) =>
+        Array.isArray(zone.rooms) ? zone.rooms : []
+      )
+    : [];
 
-  if (Array.isArray(load.reqs)) {
-    rawReqs = load.reqs;
-  } else if (Array.isArray(load.rooms)) {
-    rawReqs = load.rooms.map((r) =>
-      r?.heating_load_btuh ??
-      r?.heating_btuh ??
-      r?.load_btuh ??
-      r?.required_btuh ??
-      ""
-    );
-  } else if (Array.isArray(load.head_requirements)) {
-    rawReqs = load.head_requirements;
-  }
-
-  const reqs = rawReqs
-    .map((v) => String(v ?? "").trim())
-    .filter((v) => v !== "");
+  const reqs = rooms
+    .map((room) => room?.heating_btu_hr)
+    .filter((v) => typeof v === "number" && !Number.isNaN(v))
+    .map((v) => String(Math.round(v)));
 
   return {
     manufacturer,
@@ -266,6 +255,7 @@ export default function App() {
 
   // --- dynamic room requirements ---
   const [reqs, setReqs] = useState(["9000"]); // same default vibe as your GUI
+  const [headSelections, setHeadSelections] = useState([{ roomId: "", btu: "" }]);
 
   // --- results ---
   const [loading, setLoading] = useState(false);
@@ -342,6 +332,89 @@ export default function App() {
     setError("");
     setLoadImported(true);
   }, [incomingLoad]);
+
+  // build room list from conduit upload
+  const flatRooms = incomingLoad?.zones?.flatMap((zone) =>
+    (zone.rooms || []).map((room) => ({
+      id: room.room_id,
+      label: `${zone.zone_name} / ${room.room_name}`,
+      zoneName: zone.zone_name,
+      roomName: room.room_name,
+      heating_btu_hr: room.heating_btu_hr,
+      cooling_btu_hr: room.cooling_btu_hr,
+      sqft: room.sqft,
+    }))
+  ) || [];
+
+  // allow room selection per head user adds
+  useEffect(() => {
+    setHeadSelections((prev) => {
+      const next = Array.from({ length: roomCount }, (_, i) => ({
+        roomId: prev[i]?.roomId || "",
+        btu: prev[i]?.btu || "",
+      }));
+      return next;
+    });
+  }, [roomCount]);
+
+  const roomLookup = useMemo(() => {
+    const rooms = incomingLoad?.zones?.flatMap((zone) =>
+      (zone.rooms || []).map((room) => ({
+        ...room,
+        zone_name: zone.zone_name,
+      }))
+    ) || [];
+
+    return Object.fromEntries(
+      rooms.map((room) => [
+        room.room_id,
+        {
+          label: `${room.zone_name} / ${room.room_name}`,
+          btu: room.heating_btu_hr,
+          room,
+        },
+      ])
+    );
+  }, [incomingLoad]);
+
+  useEffect(() => {
+    setReqs(headSelections.map((h) => h.btu || ""));
+  }, [headSelections, setReqs]);
+
+  function handleHeadRoomChange(index, roomId) {
+    setHeadSelections((prev) => {
+      const next = [...prev];
+      const selected = roomLookup[roomId];
+
+      next[index] = {
+        roomId,
+        btu: selected?.btu ? String(selected.btu) : "",
+      };
+
+      return next;
+    });
+  }
+
+  function handleHeadBtuChange(idx, value) {
+    setHeadSelections((prev) => {
+      const next = [...prev];
+      next[idx] = {
+        ...next[idx],
+        btu: value,
+      };
+      return next;
+    });
+  }
+
+  function getAvailableRoomsForHead(idx) {
+    const selectedElsewhere = new Set(
+      headSelections
+        .map((h, i) => (i === idx ? null : h.roomId))
+        .filter(Boolean)
+    );
+
+    return flatRooms.filter((room) => !selectedElsewhere.has(room.id));
+  }
 
   // receive conduit load from proposal generator
   useEffect(() => {
@@ -1058,29 +1131,51 @@ export default function App() {
                 Total Req: {Number(totalReq).toFixed(0)} BTU
               </div>
             </div>
+
             <div style={styles.roomsGrid}>
-              {reqs.map((val, idx) => (
-                <label key={idx} style={styles.reqLabel}>
-                  <span style={styles.reqLabelText}>Req {idx + 1}</span>
-                  <input
-                    style={{ ...styles.input, width: "100%", boxSizing: "border-box", minWidth: 0 }}
-                    value={val}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setReqs((prev) => {
-                        const next = [...prev];
-                        next[idx] = v;
-                        return next;
-                      });
-                    }}
-                    placeholder="e.g. 9000"
-                    inputMode="numeric"
-                  />
-                </label>
+              {headSelections.map((head, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) 140px",
+                    gap: 8,
+                    alignItems: "end",
+                    minWidth: 0,
+                  }}
+                >
+                  <label style={styles.reqLabel}>
+                    <span style={styles.reqLabelText}>Head {idx + 1} Room</span>
+                    <select
+                      style={{ ...styles.input, width: "100%", boxSizing: "border-box", minWidth: 0 }}
+                      value={head.roomId}
+                      onChange={(e) => handleHeadRoomChange(idx, e.target.value)}
+                    >
+                      <option value="">Select room...</option>
+                      {getAvailableRoomsForHead(idx).map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {room.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={styles.reqLabel}>
+                    <span style={styles.reqLabelText}>Req {idx + 1}</span>
+                    <input
+                      style={{ ...styles.input, width: "100%", boxSizing: "border-box", minWidth: 0 }}
+                      value={head.btu}
+                      onChange={(e) => handleHeadBtuChange(idx, e.target.value)}
+                      placeholder="e.g. 9000"
+                      inputMode="numeric"
+                    />
+                  </label>
+                </div>
               ))}
             </div>
+
             <div style={{ fontSize: 11, color: "#666" }}>
-              Press Enter to find options
+              Select a room to auto-fill the BTU requirement, or type your own value. <br></br>Press Enter to find options.
             </div>
           </form>
         </section>
