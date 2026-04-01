@@ -32,7 +32,8 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
-          VITE_ENABLE_AI: ${{ github.ref == 'refs/heads/dev' && 'true' || 'false' }}
+          #VITE_ENABLE_AI: ${{ github.ref == 'refs/heads/dev' && 'true' || 'false' }}
+          VITE_ENABLE_AI: 'true' # have AI turned on for both branches
         run: npm run build
 
       - name: Copy frontend build into backend/frontend_dist
