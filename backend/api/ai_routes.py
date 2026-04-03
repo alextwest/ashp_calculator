@@ -302,7 +302,14 @@ def build_intent_transcript(chat_history: list[ChatTurn], latest_user_text: str)
 def ai_recommend(req: RecommendReq):
 
     try:
-        loads = resolve_loads(req.loads)
+        loads = resolve_real_loads(req.loads)
+
+        # protect against missing data
+        if not loads:
+            raise HTTPException(
+                status_code=400,
+                detail="No conduit load data available. Upload a Conduit report before using AI recommendations.",
+            )
 
         building_summary = build_building_summary(loads)
 
