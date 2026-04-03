@@ -21,6 +21,15 @@ logging.basicConfig(
 logger = logging.getLogger("ashp-backend")
 
 
+logging.getLogger("ashp").info("Python executable: %s", sys.executable)
+logging.getLogger("ashp").info("Current working dir: %s", os.getcwd())
+
+try:
+    import uvicorn
+    logging.getLogger("ashp").info("uvicorn import OK: %s", uvicorn.__version__)
+except Exception:
+    logging.getLogger("ashp").exception("uvicorn import failed")
+
 # -----------------------------------------------------------------------------
 # App
 # -----------------------------------------------------------------------------
