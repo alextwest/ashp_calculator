@@ -1346,15 +1346,8 @@ export default function App() {
           <div style={{ ...styles.section, flex: 1 }}>
             <div style={styles.sectionTitle}>Details</div>
 
-              <div
-                style={{
-                  ...styles.details,
-                  whiteSpace: "pre-wrap",
-                  fontFamily: "monospace", // keeps your current look
-                  overflowY: "auto",
-                }}
-              >
-                {detailsContent}
+              <div style={styles.details}>
+                {detailsText || "Select a result row to see details."}
               </div>
 
           </div>
