@@ -7,17 +7,19 @@ import AiChatPanel from "./AiChatPanel";
 const MANUFACTURERS = ["All", "Fujitsu", "LG"];
 
 // just used for Ai dev vs prod environment
-function ComingSoonTab() {
+function ComingSoonTab({ title = "AI System Design", message = "This feature is coming soon." }) {
   return (
-    <div style={{
-      padding: "40px",
-      textAlign: "center",
-      borderRadius: "12px",
-      background: "#f5f5f5",
-      marginTop: "20px"
-    }}>
-      <h2>AI System Design</h2>
-      <p>This feature is coming soon.</p>
+    <div
+      style={{
+        padding: "40px",
+        textAlign: "center",
+        borderRadius: "12px",
+        background: "#f5f5f5",
+        marginTop: "20px",
+      }}
+    >
+      <h2>{title}</h2>
+      <p>{message}</p>
     </div>
   );
 }
