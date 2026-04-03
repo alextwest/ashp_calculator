@@ -386,7 +386,14 @@ def ai_recommend(req: RecommendReq):
             print("ENGINE RAW RESULT:", engine)
             logging.info("ENGINE RESULT COUNT: %s", len(engine.get("results", [])))
 
-            d["candidates"] = engine.get("results", [])
+            # make sure to set manufacturer
+            candidates = engine.get("results", []) or []
+
+            for c in candidates:
+                if not c.get("Manufacturer"):
+                    c["Manufacturer"] = manufacturer
+
+            d["candidates"] = candidates
 
             print(f"Enriched draft with deterministic engine results:\nIntent: {intent}\nDraft: {d}")
 
