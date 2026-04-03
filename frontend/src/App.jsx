@@ -1337,22 +1337,24 @@ export default function App() {
               boxSizing: "border-box",
             }}
           >
-            {ENABLE_AI && !hasCatalog ? (
-              <ComingSoonTab
-                title="AI System Design"
-                message="AI recommendations require Conduit load data. Upload a report to ASHP proposal generator to continue."
-              />
-            ) : ENABLE_AI && hasCatalog ? (
-              <AiChatPanel
-                aiUserText={aiUserText}
-                setAiUserText={setAiUserText}
-                aiLoading={aiLoading}
-                aiError={aiError}
-                roomCatalog={roomCatalog}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-                onSend={runAi}
-              />
+            {ENABLE_AI ? (
+              hasCatalog ? (
+                <AiChatPanel
+                  aiUserText={aiUserText}
+                  setAiUserText={setAiUserText}
+                  aiLoading={aiLoading}
+                  aiError={aiError}
+                  roomCatalog={roomCatalog}
+                  selectedIds={selectedIds}
+                  setSelectedIds={setSelectedIds}
+                  onSend={runAi}
+                />
+              ) : (
+                <ComingSoonTab
+                  title="AI System Design"
+                  message="AI recommendations require Conduit load data. Upload a report to ASHP proposal generator to continue."
+                />
+              )
             ) : (
               <ComingSoonTab
                 title="AI System Design"
