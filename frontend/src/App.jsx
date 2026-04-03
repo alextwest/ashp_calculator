@@ -665,12 +665,12 @@ export default function App() {
 
         <div>{`  Tonnage: ${fmt(tonnage, 2)} | SEER2: ${fmt(seer2, 1)} | EER2: ${fmt(eer2, 1)} | HSPF2: ${fmt(hspf2, 1)}`}</div>
 
-        <div></div>
+        <div></div><br />
         <div>{`Type: ${type}`}</div>
         <div>{`Units: ${units}`}</div>
         <div>{`Indoor Capacity: ${indoorCap} | Total Capacity: ${fmt(totalCap)}`}</div>
 
-        <div></div>
+        <div></div><br />
         <div>Assignment (sorted req -&gt; sorted cap):</div>
 
         {mapping.length ? (
@@ -683,7 +683,7 @@ export default function App() {
           <div>  (no mapping returned)</div>
         )}
 
-        <div></div>
+        <div></div><br />
         <div>{`Worst margin: ${fmt(worstMargin)}`}</div>
         <div>{`Total oversize: ${fmt(marginTotal)}`}</div>
       </div>
@@ -1337,17 +1337,12 @@ export default function App() {
               boxSizing: "border-box",
             }}
           >
-            {!ENABLE_AI ? (
-              <ComingSoonTab
-                title="AI System Design"
-                message="This feature is coming soon."
-              />
-            ) : !hasCatalog ? (
+            {ENABLE_AI && !hasCatalog ? (
               <ComingSoonTab
                 title="AI System Design"
                 message="AI recommendations require Conduit load data. Upload a report to ASHP proposal generator to continue."
               />
-            ) : (
+            ) : ENABLE_AI && hasCatalog ? (
               <AiChatPanel
                 aiUserText={aiUserText}
                 setAiUserText={setAiUserText}
@@ -1357,6 +1352,11 @@ export default function App() {
                 selectedIds={selectedIds}
                 setSelectedIds={setSelectedIds}
                 onSend={runAi}
+              />
+            ) : (
+              <ComingSoonTab
+                title="AI System Design"
+                message="This feature is coming soon."
               />
             )}
           </div>
