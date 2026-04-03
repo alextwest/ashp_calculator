@@ -279,6 +279,7 @@ export default function App() {
   const [aiError, setAiError] = useState("");
 
   const [roomCatalog, setRoomCatalog] = useState(null);
+  const [hasCatalog, setHasCatalog] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]); //(["whole_unit"]); // default
 
   // setting logic for fetching conduit data from generator upload
@@ -451,6 +452,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [loadImported, reqs]);
 
+  // making sure to only fetch the catalog for an uploaded conduit with no sample data as the fallback
   useEffect(() => {
     console.log("Fetching AI catalog...");
 
@@ -467,24 +469,26 @@ export default function App() {
         console.log("Catalog response status:", r.status);
         console.log("Catalog response content-type:", r.headers.get("content-type"));
 
-        const text = await r.text();
-        console.log("Catalog raw response:", text.slice(0, 500));
-
         if (!r.ok) {
+          const text = await r.text();
+          console.log("Catalog raw error response:", text.slice(0, 500));
           throw new Error(`Catalog request failed: HTTP ${r.status} - ${text}`);
         }
 
-        return JSON.parse(text);
+        return r.json();
       })
       .then((data) => {
         console.log("Catalog data:", data);
-        setRoomCatalog(data);
+        setRoomCatalog(data.catalog ?? null);
+        setHasCatalog(Boolean(data.has_catalog));
       })
       .catch((e) => {
         console.error("Catalog fetch error:", e);
         setAiError(e.message || String(e));
+        setRoomCatalog(null);
+        setHasCatalog(false);
       });
-  }, []);
+  }, [incomingLoad]);
 
   // function to run AI agent
   async function runAi(textOverride, messages = []) {
@@ -1329,7 +1333,17 @@ export default function App() {
               boxSizing: "border-box",
             }}
           >
-            {ENABLE_AI ? (
+            {!ENABLE_AI ? (
+              <ComingSoonTab
+                title="AI System Design"
+                message="This feature is coming soon."
+              />
+            ) : !hasCatalog ? (
+              <ComingSoonTab
+                title="AI System Design"
+                message="AI recommendations require Conduit load data. Upload a report to ASHP proposal generator to continue."
+              />
+            ) : (
               <AiChatPanel
                 aiUserText={aiUserText}
                 setAiUserText={setAiUserText}
@@ -1340,8 +1354,6 @@ export default function App() {
                 setSelectedIds={setSelectedIds}
                 onSend={runAi}
               />
-            ) : (
-              <ComingSoonTab title="AI System Design" message="This feature is coming soon." />
             )}
           </div>
         </section>
