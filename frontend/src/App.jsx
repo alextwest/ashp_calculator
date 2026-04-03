@@ -240,10 +240,11 @@ function buildCalculatorStateFromConduit(load) {
 export default function App() {
   // making sure ai portion doesnt show on prod until ready
   const ENABLE_AI =
-    import.meta.env.VITE_ENABLE_AI === "true" ||
-    import.meta.env.VITE_ENABLE_AI === "1" ||
-    import.meta.env.DEV;
-  console.log("VITE_ENABLE_AI =", import.meta.env.VITE_ENABLE_AI);
+    String(import.meta.env.VITE_ENABLE_AI).toLowerCase() === "true" ||
+    String(import.meta.env.VITE_ENABLE_AI).toLowerCase() === "1" ||
+   import.meta.env.DEV;
+  console.log("VITE_ENABLE_AI raw =", import.meta.env.VITE_ENABLE_AI);
+  console.log("ENABLE_AI parsed =", ENABLE_AI);
 
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("All");
