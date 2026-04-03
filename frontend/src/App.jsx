@@ -470,6 +470,10 @@ export default function App() {
         const text = await r.text();
         console.log("Catalog raw response:", text.slice(0, 500));
 
+        if (!r.ok) {
+          throw new Error(`Catalog request failed: HTTP ${r.status} - ${text}`);
+        }
+
         return JSON.parse(text);
       })
       .then((data) => {
