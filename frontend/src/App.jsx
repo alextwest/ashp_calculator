@@ -583,6 +583,9 @@ export default function App() {
     const totalCap = r["Total Capacity"] ?? "";
     const mapping = Array.isArray(r.mapping) ? r.mapping : [];
 
+    const worstMargin = r.worst_margin ?? 0;
+    const marginTotal = r.margin_total ?? 0;
+
     // New fields (these exist in the row, but you won’t show them as table columns)
     const op_watts = r["Op. Watts/Htg"];
     const breaker = r["Breaker Req."];
@@ -664,7 +667,7 @@ export default function App() {
         <div></div>
         <div>{`Type: ${type}`}</div>
         <div>{`Units: ${units}`}</div>
-        <div>{`Indoor Capacity: ${indoorCap} | Total Capacity: ${totalCap}`}</div>
+        <div>{`Indoor Capacity: ${indoorCap} | Total Capacity: ${fmt(totalCap)}`}</div>
 
         <div></div>
         <div>Assignment (sorted req -&gt; sorted cap):</div>
@@ -680,8 +683,8 @@ export default function App() {
         )}
 
         <div></div>
-        <div>{`Worst margin: ${Number(r.worst_margin ?? 0).toFixed(0)}`}</div>
-        <div>{`Total oversize: ${Number(r.margin_total ?? 0).toFixed(0)}`}</div>
+        <div>{`Worst margin: ${fmt(worstMargin)}`}</div>
+        <div>{`Total oversize: ${fmt(marginTotal)}`}</div>
       </div>
     );
   }, [selectedRow]);
