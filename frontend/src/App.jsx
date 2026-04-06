@@ -7,17 +7,19 @@ import AiChatPanel from "./AiChatPanel";
 const MANUFACTURERS = ["All", "Fujitsu", "LG"];
 
 // just used for Ai dev vs prod environment
-function ComingSoonTab() {
+function ComingSoonTab({ title = "AI System Design", message = "This feature is coming soon." }) {
   return (
-    <div style={{
-      padding: "40px",
-      textAlign: "center",
-      borderRadius: "12px",
-      background: "#f5f5f5",
-      marginTop: "20px"
-    }}>
-      <h2>AI System Design</h2>
-      <p>This feature is coming soon.</p>
+    <div
+      style={{
+        padding: "40px",
+        textAlign: "center",
+        borderRadius: "12px",
+        background: "#f5f5f5",
+        marginTop: "20px",
+      }}
+    >
+      <h2>{title}</h2>
+      <p>{message}</p>
     </div>
   );
 }
@@ -240,10 +242,11 @@ function buildCalculatorStateFromConduit(load) {
 export default function App() {
   // making sure ai portion doesnt show on prod until ready
   const ENABLE_AI =
-    import.meta.env.VITE_ENABLE_AI === "true" ||
-    import.meta.env.VITE_ENABLE_AI === "1" ||
-    import.meta.env.DEV;
-  console.log("VITE_ENABLE_AI =", import.meta.env.VITE_ENABLE_AI);
+    String(import.meta.env.VITE_ENABLE_AI).toLowerCase() === "true" ||
+    String(import.meta.env.VITE_ENABLE_AI).toLowerCase() === "1" ||
+   import.meta.env.DEV;
+  console.log("VITE_ENABLE_AI raw =", import.meta.env.VITE_ENABLE_AI);
+  console.log("ENABLE_AI parsed =", ENABLE_AI);
 
   // --- top bar state ---
   const [manufacturer, setManufacturer] = useState("All");
@@ -279,6 +282,7 @@ export default function App() {
   const [aiError, setAiError] = useState("");
 
   const [roomCatalog, setRoomCatalog] = useState(null);
+  const [hasCatalog, setHasCatalog] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]); //(["whole_unit"]); // default
 
   // setting logic for fetching conduit data from generator upload
@@ -451,6 +455,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [loadImported, reqs]);
 
+  // making sure to only fetch the catalog for an uploaded conduit with no sample data as the fallback
   useEffect(() => {
     console.log("Fetching AI catalog...");
 
@@ -467,20 +472,26 @@ export default function App() {
         console.log("Catalog response status:", r.status);
         console.log("Catalog response content-type:", r.headers.get("content-type"));
 
-        const text = await r.text();
-        console.log("Catalog raw response:", text.slice(0, 500));
+        if (!r.ok) {
+          const text = await r.text();
+          console.log("Catalog raw error response:", text.slice(0, 500));
+          throw new Error(`Catalog request failed: HTTP ${r.status} - ${text}`);
+        }
 
-        return JSON.parse(text);
+        return r.json();
       })
       .then((data) => {
         console.log("Catalog data:", data);
-        setRoomCatalog(data);
+        setRoomCatalog(data.catalog ?? null);
+        setHasCatalog(Boolean(data.has_catalog));
       })
       .catch((e) => {
         console.error("Catalog fetch error:", e);
         setAiError(e.message || String(e));
+        setRoomCatalog(null);
+        setHasCatalog(false);
       });
-  }, []);
+  }, [incomingLoad]);
 
   // function to run AI agent
   async function runAi(textOverride, messages = []) {
@@ -575,6 +586,9 @@ export default function App() {
     const totalCap = r["Total Capacity"] ?? "";
     const mapping = Array.isArray(r.mapping) ? r.mapping : [];
 
+    const worstMargin = r.worst_margin ?? 0;
+    const marginTotal = r.margin_total ?? 0;
+
     // New fields (these exist in the row, but you won’t show them as table columns)
     const op_watts = r["Op. Watts/Htg"];
     const breaker = r["Breaker Req."];
@@ -584,48 +598,106 @@ export default function App() {
     const seer2 = r["SEER2"];
     const eer2 = r["EER2"];
     const hspf2 = r["HSPF2"];
+
+    // format not tested values for 0 or 5 degrees
+    const isNotTested = (val) =>
+      String(val ?? "").trim().toLowerCase() === "not tested";
+
     
     console.log("🧾 details of selected row data:", r)
 
-    const lines = [
-      `Manufacturer: ${manufacturer}`,
-      `Model: ${model}`,
-      "Performance:",
-      `  Op. Watts/Htg: ${fmt(op_watts)}`,
-      `  Breaker Req.: ${fmt(breaker)}`,
-      `  BTU @ 5°F: ${fmt(btu5)} | BTU @ 0°F: ${fmt(btu0)}`,
-      `  Tonnage: ${fmt(tonnage, 2)} | SEER2: ${fmt(seer2, 1)} | EER2: ${fmt(eer2, 1)} | HSPF2: ${fmt(hspf2, 1)}`,
-      "",
-      `Type: ${type}`,
-      `Units: ${units}`,
-      `Indoor Capacity: ${indoorCap} | Total Capacity: ${totalCap}`,
-      "",
-      "Assignment (sorted req -> sorted cap):",
-    ];
+  //   const lines = [
+  //     `Manufacturer: ${manufacturer}`,
+  //     `Model: ${model}`,
+  //     "Performance:",
+  //     `  Op. Watts/Htg: ${fmt(op_watts)}`,
+  //     `  Breaker Req.: ${fmt(breaker)}`,
+  //     `  BTU @ 5°F: ${isNotTested(btu5) ? "⚠ NOT TESTED" : fmt(btu5)} | BTU @ 0°F: ${
+  //       isNotTested(btu0) ? "⚠ NOT TESTED" : fmt(btu0)
+  //     }`,
+  //     `  Tonnage: ${fmt(tonnage, 2)} | SEER2: ${fmt(seer2, 1)} | EER2: ${fmt(eer2, 1)} | HSPF2: ${fmt(hspf2, 1)}`,
+  //     "",
+  //     `Type: ${type}`,
+  //     `Units: ${units}`,
+  //     `Indoor Capacity: ${indoorCap} | Total Capacity: ${totalCap}`,
+  //     "",
+  //     "Assignment (sorted req -> sorted cap):",
+  //   ];
 
-    if (mapping.length) {
-      mapping.forEach(([req, cap], i) => {
-        lines.push(
-          `  ${i + 1}. req=${Number(req).toFixed(0)} <= cap=${Number(cap).toFixed(0)} (margin ${(Number(cap) - Number(req)).toFixed(0)})`
-        );
-      });
-    } else {
-      lines.push("  (no mapping returned)");
-    }
+  //   if (mapping.length) {
+  //     mapping.forEach(([req, cap], i) => {
+  //       lines.push(
+  //         `  ${i + 1}. req=${Number(req).toFixed(0)} <= cap=${Number(cap).toFixed(0)} (margin ${(Number(cap) - Number(req)).toFixed(0)})`
+  //       );
+  //     });
+  //   } else {
+  //     lines.push("  (no mapping returned)");
+  //   }
 
-    lines.push("");
-    lines.push(`Worst margin: ${Number(r.worst_margin ?? 0).toFixed(0)}`);
-    lines.push(`Total oversize: ${Number(r.margin_total ?? 0).toFixed(0)}`);
+  //   lines.push("");
+  //   lines.push(`Worst margin: ${Number(r.worst_margin ?? 0).toFixed(0)}`);
+  //   lines.push(`Total oversize: ${Number(r.margin_total ?? 0).toFixed(0)}`);
 
-    return lines.join("\n");
+  //   return lines.join("\n");
+  // }, [selectedRow]);
+
+  // need to do a special case render for the btu testing value to be in red when not tested to warn the user
+    return (
+      <div style={{ whiteSpace: "pre-wrap" }}>
+        <div>Manufacturer: {manufacturer}</div>
+        <div>Model: {model}</div>
+        <div>Performance:</div>
+        <div>{`  Op. Watts/Htg: ${fmt(op_watts)}`}</div>
+        <div>{`  Breaker Req.: ${fmt(breaker)}`}</div>
+
+        <div>
+          {"  BTU @ 5°F: "}
+          {isNotTested(btu5) ? (
+            <span style={{ color: "#d32f2f", fontWeight: 700 }}>⚠ Not Tested</span>
+          ) : (
+            fmt(btu5)
+          )}
+          {" | BTU @ 0°F: "}
+          {isNotTested(btu0) ? (
+            <span style={{ color: "#d32f2f", fontWeight: 700 }}>⚠ Not Tested</span>
+          ) : (
+            fmt(btu0)
+          )}
+        </div>
+
+        <div>{`  Tonnage: ${fmt(tonnage, 2)} | SEER2: ${fmt(seer2, 1)} | EER2: ${fmt(eer2, 1)} | HSPF2: ${fmt(hspf2, 1)}`}</div>
+
+        <div></div><br />
+        <div>{`Type: ${type}`}</div>
+        <div>{`Units: ${units}`}</div>
+        <div>{`Indoor Capacity: ${indoorCap} | Total Capacity: ${fmt(totalCap)}`}</div>
+
+        <div></div><br />
+        <div>Assignment (sorted req -&gt; sorted cap):</div>
+
+        {mapping.length ? (
+          mapping.map(([req, cap], i) => (
+            <div key={i}>
+              {`  ${i + 1}. req=${Number(req).toFixed(0)} <= cap=${Number(cap).toFixed(0)} (margin ${(Number(cap) - Number(req)).toFixed(0)})`}
+            </div>
+          ))
+        ) : (
+          <div>  (no mapping returned)</div>
+        )}
+
+        <div></div><br />
+        <div>{`Worst margin: ${fmt(worstMargin)}`}</div>
+        <div>{`Total oversize: ${fmt(marginTotal)}`}</div>
+      </div>
+    );
   }, [selectedRow]);
 
-  const detailsRows = useMemo(() => {
-    const min = 6;
-    const max = 20;
-    const lineCount = detailsText ? detailsText.split("\n").length : min;
-    return Math.max(min, Math.min(max, lineCount));
-  }, [detailsText]);
+  // const detailsRows = useMemo(() => {
+  //   const min = 6;
+  //   const max = 20;
+  //   const lineCount = detailsText ? detailsText.split("\n").length : min;
+  //   return Math.max(min, Math.min(max, lineCount));
+  // }, [detailsText]);
 
   // keep reqs array in sync with roomCount
   useEffect(() => {
@@ -1000,11 +1072,15 @@ export default function App() {
       borderRadius: 4,
       border: "1px solid #ccc",
       background: "white",
-      // ✅ force visible text
       color: "#111",
       WebkitTextFillColor: "#111",
-      // ✅ in case something global is dimming it
       opacity: 1,
+
+      whiteSpace: "pre-wrap",
+      overflowY: "auto",
+      minHeight: 160,
+      boxSizing: "border-box",
+      lineHeight: 1.4,
     },
 
     err: { color: "#b00020", marginTop: 8, whiteSpace: "pre-wrap" },
@@ -1264,18 +1340,28 @@ export default function App() {
             }}
           >
             {ENABLE_AI ? (
-              <AiChatPanel
-                aiUserText={aiUserText}
-                setAiUserText={setAiUserText}
-                aiLoading={aiLoading}
-                aiError={aiError}
-                roomCatalog={roomCatalog}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-                onSend={runAi}
-              />
+              hasCatalog ? (
+                <AiChatPanel
+                  aiUserText={aiUserText}
+                  setAiUserText={setAiUserText}
+                  aiLoading={aiLoading}
+                  aiError={aiError}
+                  roomCatalog={roomCatalog}
+                  selectedIds={selectedIds}
+                  setSelectedIds={setSelectedIds}
+                  onSend={runAi}
+                />
+              ) : (
+                <ComingSoonTab
+                  title="AI System Design"
+                  message="AI recommendations require Conduit load data. Upload a report to ASHP proposal generator to continue."
+                />
+              )
             ) : (
-              <ComingSoonTab title="AI System Design" message="This feature is coming soon." />
+              <ComingSoonTab
+                title="AI System Design"
+                message="This feature is coming soon."
+              />
             )}
           </div>
         </section>
@@ -1283,13 +1369,11 @@ export default function App() {
         <section className="details">
           <div style={{ ...styles.section, flex: 1 }}>
             <div style={styles.sectionTitle}>Details</div>
-            <textarea
-              style={styles.details}
-              rows={detailsRows}
-              value={detailsText}
-              readOnly
-              placeholder="Select a result row to see details."
-            />
+
+              <div style={styles.details}>
+                {detailsText || "Select a result row to see details."}
+              </div>
+
           </div>
         </section>
       </div>

@@ -116,7 +116,17 @@ def default_loads():
 
     return loads
 
-def resolve_loads(loads: dict | None) -> dict:
+def resolve_real_loads(loads: dict | None) -> dict | None:
+    """
+    Use generator-provided conduit loads when available.
+    Return None if real loads are not available.
+    """
+    if isinstance(loads, dict) and loads:
+        return loads
+    return None
+
+
+def resolve_loads_with_fallback(loads: dict | None) -> dict:
     """
     Use generator-provided conduit loads when available.
     Fall back to default stub only for local testing.
@@ -152,9 +162,17 @@ class CatalogReq(BaseModel):
 
 @router.post("/ai/catalog")
 def ai_catalog(req: CatalogReq):
-    loads = resolve_loads(req.loads)
-    print("Generated room catalog from loads:", loads)
-    return build_room_catalog(loads)
+    loads = resolve_real_loads(req.loads)
+
+    if not loads:
+        print("No conduit loads available; returning null catalog")
+        return {"catalog": None, "has_catalog": False}
+
+    print("Generated room catalog from conduit loads:", loads)
+    return {
+        "catalog": build_room_catalog(loads),
+        "has_catalog": True,
+    }
 
 def filter_loads_by_selection(loads: dict, selected_ids: list[str]) -> dict:
     if not selected_ids or "WHOLE" in selected_ids:
@@ -284,7 +302,14 @@ def build_intent_transcript(chat_history: list[ChatTurn], latest_user_text: str)
 def ai_recommend(req: RecommendReq):
 
     try:
-        loads = resolve_loads(req.loads)
+        loads = resolve_real_loads(req.loads)
+
+        # protect against missing data
+        if not loads:
+            raise HTTPException(
+                status_code=400,
+                detail="No conduit load data available. Upload a Conduit report before using AI recommendations.",
+            )
 
         building_summary = build_building_summary(loads)
 
@@ -361,7 +386,14 @@ def ai_recommend(req: RecommendReq):
             print("ENGINE RAW RESULT:", engine)
             logging.info("ENGINE RESULT COUNT: %s", len(engine.get("results", [])))
 
-            d["candidates"] = engine.get("results", [])
+            # make sure to set manufacturer
+            candidates = engine.get("results", []) or []
+
+            for c in candidates:
+                if not c.get("Manufacturer"):
+                    c["Manufacturer"] = manufacturer
+
+            d["candidates"] = candidates
 
             print(f"Enriched draft with deterministic engine results:\nIntent: {intent}\nDraft: {d}")
 
