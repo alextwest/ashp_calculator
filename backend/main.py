@@ -18,17 +18,18 @@ logging.basicConfig(
     stream=sys.stdout,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-logger = logging.getLogger("ashp-backend")
+logging.getLogger("azure.monitor.opentelemetry.exporter").setLevel(logging.WARNING)
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
+logger = logging.getLogger("ashp")
 
-
-logging.getLogger("ashp").info("Python executable: %s", sys.executable)
-logging.getLogger("ashp").info("Current working dir: %s", os.getcwd())
+logger.info("Python executable: %s", sys.executable)
+logger.info("Current working dir: %s", os.getcwd())
 
 try:
     import uvicorn
-    logging.getLogger("ashp").info("uvicorn import OK: %s", uvicorn.__version__)
+    logger.info("uvicorn import OK: %s", uvicorn.__version__)
 except Exception:
-    logging.getLogger("ashp").exception("uvicorn import failed")
+    logger.exception("uvicorn import failed")
 
 # -----------------------------------------------------------------------------
 # App
