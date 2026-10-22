@@ -103,7 +103,7 @@ export default function AiChatPanel({
       <div style={{ fontWeight: 500, marginBottom: 8 }}>AI Assistant (based on conduit upload)</div>
 
       {/* Selection */}
-      {/* <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 10, marginBottom: 10 }}>
+      {/* <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 10, marginBottom: 10 }}>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>Scope Location</div>
 
         <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
@@ -138,7 +138,7 @@ export default function AiChatPanel({
             })}
           </div>
         ) : (
-          <div style={{ fontSize: 12, color: "#666" }}>
+          <div style={{ fontSize: 12, color: "var(--muted)" }}>
             Room list not loaded yet. You can still run “whole unit”.
           </div>
         )}
@@ -149,10 +149,10 @@ export default function AiChatPanel({
         style={{
           flex: 1,
           overflowY: "auto",
-          border: "1px solid #ddd",
+          border: "1px solid var(--border)",
           borderRadius: 10,
           padding: 10,
-          background: "white",
+          background: "var(--surface)",
         }}
       >
         {messages.map((m, idx) => (
@@ -170,8 +170,8 @@ export default function AiChatPanel({
                 whiteSpace: "pre-wrap",
                 padding: "8px 10px",
                 borderRadius: 12,
-                border: "1px solid #eee",
-                background: m.role === "user" ? "#f7f7f7" : "#fff",
+                border: "1px solid var(--border)",
+                background: m.role === "user" ? "var(--surface-muted)" : "var(--surface)",
                 fontSize: 13,
               }}
             >
@@ -184,7 +184,7 @@ export default function AiChatPanel({
 
       {/* Error */}
       {aiError ? (
-        <div style={{ color: "crimson", marginTop: 8, fontSize: 13 }}>{aiError}</div>
+        <div style={{ color: "var(--error)", marginTop: 8, fontSize: 13 }}>{aiError}</div>
       ) : null}
 
       {/* Input */}
@@ -199,7 +199,7 @@ export default function AiChatPanel({
             flex: 1,
             resize: "none",
             borderRadius: 10,
-            border: "1px solid #ddd",
+            border: "1px solid var(--border)",
             padding: 10,
             fontSize: 13,
           }}
@@ -210,7 +210,7 @@ export default function AiChatPanel({
           disabled={aiLoading || !aiUserText.trim()}
           style={{
             borderRadius: 10,
-            border: "1px solid #ddd",
+            border: "1px solid var(--border)",
             padding: "0 14px",
             fontWeight: 600,
             cursor: aiLoading ? "default" : "pointer",

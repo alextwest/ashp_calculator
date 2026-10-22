@@ -14,7 +14,7 @@ function ComingSoonTab({ title = "AI System Design", message = "This feature is 
         padding: "40px",
         textAlign: "center",
         borderRadius: "12px",
-        background: "#f5f5f5",
+        background: "var(--surface-muted)",
         marginTop: "20px",
       }}
     >
@@ -653,13 +653,13 @@ export default function App() {
         <div>
           {"  BTU @ 5°F: "}
           {isNotTested(btu5) ? (
-            <span style={{ color: "#d32f2f", fontWeight: 700 }}>⚠ Not Tested</span>
+            <span style={{ color: "var(--error)", fontWeight: 700 }}>⚠ Not Tested</span>
           ) : (
             fmt(btu5)
           )}
           {" | BTU @ 0°F: "}
           {isNotTested(btu0) ? (
-            <span style={{ color: "#d32f2f", fontWeight: 700 }}>⚠ Not Tested</span>
+            <span style={{ color: "var(--error)", fontWeight: 700 }}>⚠ Not Tested</span>
           ) : (
             fmt(btu0)
           )}
@@ -922,16 +922,16 @@ export default function App() {
       margin: "0 auto",
       padding: "12px",
       fontFamily: "Segoe UI, Arial, sans-serif",
-      background: "white",
-      color: "black",
+      background: "var(--surface)",
+      color: "var(--text)",
     },
 
     // simple boxed sections (like a desktop tool)
     section: {
-      border: "1px solid #ccc",
+      border: "1px solid var(--border)",
       padding: 10,
       marginBottom: 10,
-      background: "white",
+      background: "var(--surface)",
     },
 
     title: { margin: "0 0 8px", fontSize: 22, fontWeight: 700 },
@@ -979,7 +979,7 @@ export default function App() {
     input: {
       padding: "6px 8px",
       fontSize: 13,
-      border: "1px solid #999",
+      border: "1px solid var(--border)",
       borderRadius: 4,
       minWidth: 160,
     },
@@ -987,7 +987,7 @@ export default function App() {
     smallInput: {
       padding: "6px 8px",
       fontSize: 13,
-      border: "1px solid #999",
+      border: "1px solid var(--border)",
       borderRadius: 4,
       width: 90,
     },
@@ -996,9 +996,9 @@ export default function App() {
       padding: "7px 10px",
       fontSize: 13,
       borderRadius: 4,
-      border: "1px solid #333",
-      background: "#111",
-      color: "white",
+      border: "1px solid var(--border)",
+      background: "var(--button-bg)",
+      color: "var(--button-text)",
       cursor: "pointer",
     },
 
@@ -1030,9 +1030,9 @@ export default function App() {
     },
 
     tableBox: {
-      border: "1px solid #ccc",
+      border: "1px solid var(--border)",
       padding: 10,
-      background: "white",
+      background: "var(--surface)",
       maxHeight: 420,
       overflow: "auto",
     },
@@ -1042,27 +1042,27 @@ export default function App() {
     th: {
       textAlign: "left",
       padding: "6px 8px",
-      borderBottom: "1px solid #ddd",
+      borderBottom: "1px solid var(--border)",
       position: "sticky",
       top: 62,
-      background: "white",
+      background: "var(--surface)",
       zIndex: 10,
     },
 
     td: { 
       padding: "6px 8px", 
-      borderBottom: "1px solid #eee",
+      borderBottom: "1px solid var(--border)",
     },
 
     tdCenter: {
       padding: "6px 8px",
-      borderBottom: "1px solid #eee",
+      borderBottom: "1px solid var(--border)",
       textAlign: "center",
     },
 
     row: { cursor: "pointer" },
 
-    selectedRow: { background: "#f0f4ff" },
+    selectedRow: { background: "var(--surface-hover)" },
 
     details: {
       width: "100%",
@@ -1070,10 +1070,10 @@ export default function App() {
       fontSize: 12,
       padding: 10,
       borderRadius: 4,
-      border: "1px solid #ccc",
-      background: "white",
-      color: "#111",
-      WebkitTextFillColor: "#111",
+      border: "1px solid var(--border)",
+      background: "var(--surface)",
+      color: "var(--text)",
+      WebkitTextFillColor: "var(--text)",
       opacity: 1,
 
       whiteSpace: "pre-wrap",
@@ -1083,7 +1083,7 @@ export default function App() {
       lineHeight: 1.4,
     },
 
-    err: { color: "#b00020", marginTop: 8, whiteSpace: "pre-wrap" },
+    err: { color: "var(--error)", marginTop: 8, whiteSpace: "pre-wrap" },
 
     note: { opacity: 0.75, fontSize: 12 },
 
@@ -1091,9 +1091,9 @@ export default function App() {
       position: "sticky",
       top: 0,
       zIndex: 20,
-      background: "#fff",          // important so the table doesn't show through
+      background: "var(--surface)",          // important so the table doesn't show through
       paddingBottom: 8,
-      borderBottom: "1px solid #ddd",
+      borderBottom: "1px solid var(--border)",
     },
 
     resultsControls: {
@@ -1280,7 +1280,7 @@ export default function App() {
               ))}
             </div>
 
-            <div style={{ fontSize: 11, color: "#666" }}>
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>
               Room selection will only show if a conduit file was uploaded in the proposal generator. 
               <br></br>Select a room to auto-fill the BTU requirement, or type your own value.
               <br></br>Press Enter to find options.
