@@ -1,10 +1,10 @@
 # ASHP Calculator
 
-A calculator application built with Python and JavaScript for performing pharmaceutical calculations and analysis.
+A calculator application built with Python and JavaScript for performing air source heat pump system calculations and analysis.
 
 ## Overview
 
-ASHP Calculator is a full-stack application combining Python backend logic with a JavaScript frontend interface. It's designed to provide efficient and accurate pharmaceutical calculations following ASHP (American Society of Health-System Pharmacists) standards.
+ASHP Calculator is a full-stack application combining Python backend logic with a JavaScript frontend interface. It's designed to provide efficient and accurate pharmaceutical calculations following ASHP (Air Source Heat Pump) standards.
 
 ## Technology Stack
 
