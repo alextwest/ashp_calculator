@@ -1108,6 +1108,18 @@ export default function App() {
 
   return (
     <div style={styles.page}>
+      <a
+        href="https://paradigmesco--paradigm-home.retool.app/"
+        title="Click logo for Paradigm Home"
+        aria-label="Click logo for Paradigm Home"
+        style={{ display: "inline-block", maxWidth: "100%", marginBottom: 12 }}
+      >
+        <img
+          src={`${import.meta.env.BASE_URL}Paradigm-Logo.png`}
+          alt="Paradigm Energy Services"
+          style={{ display: "block", width: 280, maxWidth: "100%", height: "auto" }}
+        />
+      </a>
       <h1 style={styles.title}>ASHP Combo Calculator</h1>
 
       <div className="appShell">
