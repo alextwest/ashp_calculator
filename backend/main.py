@@ -88,6 +88,14 @@ if ASSETS_DIR.exists() and INDEX_HTML.exists():
     logger.info("✅ Serving frontend_dist SPA")
     app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
+    @app.get("/Paradigm-Logo.png", include_in_schema=False)
+    def paradigm_logo():
+        return FileResponse(DIST_DIR / "Paradigm-Logo.png", media_type="image/png")
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        return FileResponse(DIST_DIR / "favicon.ico", media_type="image/x-icon")
+
     @app.get("/")
     def spa_index():
         return FileResponse(INDEX_HTML)
