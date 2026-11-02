@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Tuple
 from collections import defaultdict
 
 from openai import OpenAI
+from model_catalog import database_enabled, read_models
 
 def get_openai_client():
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -136,7 +137,7 @@ def build_building_summary(loads_json: Dict[str, Any]) -> Dict[str, Any]:
         zones_out.append({
             "zone_name": zone_name,
             "heating_btu_hr": zone_heat,
-            "room_names": [z.get("room_name") for r in zone_rooms if z.get("room_name")],
+            "room_names": [r.get("room_name") for r in zone_rooms if r.get("room_name")],
         })
 
         for r in zone_rooms:
@@ -206,7 +207,7 @@ def _normalize_type_to_distribution(excel_type: str) -> Optional[str]:
     Map your Excel 'Type' to distribution.
     Snippet shows 'Non-ducted' -> ductless.
     """
-    t = (excel_type or "").strip().lower()
+    t = excel_type.strip().lower() if isinstance(excel_type, str) else ""
     if t in {"non-ducted", "nond-ducted", "nonducted", "ductless"}:
         return "ductless"
     if t in {"ducted"}:
@@ -235,7 +236,7 @@ def run_ashp_excel_candidates(
         mfr = "fujitsu"  # fallback
 
     path = excel_paths.get(mfr, excel_paths["fujitsu"])
-    df = pd.read_excel(path, sheet_name=sheet_name)  # default first sheet
+    df = read_models({"fujitsu": "Fujitsu", "lg": "LG"}[mfr]) if database_enabled() else pd.read_excel(path, sheet_name=sheet_name)
 
     # Normalize column names exactly as in workbook
     # If your workbook sometimes differs (e.g., extra spaces), you can strip:

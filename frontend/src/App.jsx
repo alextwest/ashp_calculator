@@ -280,6 +280,8 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [projectFiles, setProjectFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   const [roomCatalog, setRoomCatalog] = useState(null);
   const [hasCatalog, setHasCatalog] = useState(false);
@@ -493,6 +495,43 @@ export default function App() {
       });
   }, [incomingLoad]);
 
+  async function uploadProjectFiles(event) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!files.length) return;
+    if (projectFiles.length + files.length > 5 || files.some((file) => !file.size || file.size > 10 * 1024 * 1024)) {
+      setAiError("Choose up to 5 nonempty files, no larger than 10 MB each.");
+      return;
+    }
+    setUploading(true);
+    setAiError("");
+    try {
+      for (const file of files) {
+        const data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(",")[1]);
+          reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+          reader.readAsDataURL(file);
+        });
+        const response = await fetch("/api/ai/project-file", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: file.name, data }),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || `Could not process ${file.name}`);
+        }
+        const result = await response.json();
+        setProjectFiles((previous) => [...previous, result]);
+      }
+    } catch (error) {
+      setAiError(error.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   // function to run AI agent
   async function runAi(textOverride, messages = []) {
     const text = (textOverride ?? aiUserText).trim();
@@ -502,10 +541,6 @@ export default function App() {
     console.log("🤖 Running AI agent with user text:", text);
     console.log("🤖 Full AI chat history:", messages);
 
-    if (!roomCatalog) {
-      setAiError("Room catalog not loaded yet.");
-      return null; // IMPORTANT: return something
-    }
 
     try {
       setAiLoading(true);
@@ -519,6 +554,8 @@ export default function App() {
           content: m.content,
         })),
         loads: incomingLoad,
+        requirements: reqs.map(Number).filter((v) => Number.isFinite(v) && v > 0),
+        project_files: projectFiles,
         // intent_model: "gpt-5.2",
       });
 
@@ -1352,23 +1389,32 @@ export default function App() {
             }}
           >
             {ENABLE_AI ? (
-              hasCatalog ? (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label>
+                    Project files (PDF, TXT, CSV, JSON; up to 5 files, 10 MB each)
+                    <input type="file" multiple accept=".pdf,.txt,.csv,.json" disabled={uploading || aiLoading} onChange={uploadProjectFiles} />
+                  </label>
+                  <p>Enter at least one BTU requirement in the calculator, or describe a design requirement in chat. Files provide additional project context.</p>
+                  {uploading && <p role="status">Reading project files?</p>}
+                  {projectFiles.map((file, index) => (
+                    <div key={`${file.filename}-${index}`}>
+                      {file.filename}{" "}
+                      <button type="button" disabled={aiLoading || uploading} onClick={() => setProjectFiles((files) => files.filter((_, i) => i !== index))}>Remove</button>
+                    </div>
+                  ))}
+                </div>
                 <AiChatPanel
                   aiUserText={aiUserText}
                   setAiUserText={setAiUserText}
-                  aiLoading={aiLoading}
+                  aiLoading={aiLoading || uploading}
                   aiError={aiError}
                   roomCatalog={roomCatalog}
                   selectedIds={selectedIds}
                   setSelectedIds={setSelectedIds}
                   onSend={runAi}
                 />
-              ) : (
-                <ComingSoonTab
-                  title="AI System Design"
-                  message="AI recommendations require Conduit load data. Upload a report to ASHP proposal generator to continue."
-                />
-              )
+              </>
             ) : (
               <ComingSoonTab
                 title="AI System Design"

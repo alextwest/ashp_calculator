@@ -8,6 +8,7 @@ import time
 import re
 
 import logging
+from model_catalog import database_enabled, read_models
 
 logger = logging.getLogger("ashp.logic")
 
@@ -62,6 +63,9 @@ def load_excel(manufacturer: str) -> pd.DataFrame:
 def get_combos_cached(manufacturer: str) -> pd.DataFrame:
     if manufacturer not in MANUFACTURER_FILES:
         raise ValueError(f"Unknown manufacturer: {manufacturer}")
+
+    if database_enabled():
+        return load_combos(manufacturer)
 
     path = MANUFACTURER_FILES[manufacturer]
     if not path.exists():
@@ -151,13 +155,16 @@ def load_combos(manufacturer: str) -> pd.DataFrame:
         raise ValueError(f"Unknown manufacturer: {manufacturer}")
 
     path = MANUFACTURER_FILES[manufacturer]
-    if not path.exists():
-        raise FileNotFoundError(f"Excel file not found: {path}")
-
-    df = pd.read_excel(path, sheet_name=SHEET_NAME)
+    if database_enabled():
+        df = read_models(manufacturer)
+    else:
+        if not path.exists():
+            raise FileNotFoundError(f"Excel file not found: {path}")
+        df = pd.read_excel(path, sheet_name=SHEET_NAME)
     df = df.copy()
-    df.attrs["source_path"] = str(path)
-    log_df_signature(manufacturer, path, df, context="load_combos")
+    df.attrs["source_path"] = "ashp.model_combinations" if database_enabled() else str(path)
+    if not database_enabled():
+        log_df_signature(manufacturer, path, df, context="load_combos")
 
     unit_cols, cap_cols = detect_unit_columns(df)
 
